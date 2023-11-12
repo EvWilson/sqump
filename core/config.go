@@ -24,9 +24,14 @@ func Location() string {
 }
 
 type Config struct {
-	Version    SemVer       `json:"version"`
-	Files      []ConfigFile `json:"files"`
-	CurrentEnv string       `json:"current_env"`
+	Version     SemVer       `json:"version"`
+	Files       []ConfigFile `json:"files"`
+	CurrentEnv  string       `json:"current_env"`
+	Environment EnvMap       `json:"environment"`
+}
+
+type ConfigFile struct {
+	Path string `json:"path"`
 }
 
 func ReadConfig() (*Config, error) {
@@ -101,14 +106,37 @@ func CreateNewConfigFile() (*Config, error) {
 
 func DefaultConfig() *Config {
 	return &Config{
-		CurrentEnv: "staging",
-		Version:    CurrentVersion,
-		Files:      []ConfigFile{},
+		CurrentEnv:  "staging",
+		Version:     CurrentVersion,
+		Files:       []ConfigFile{},
+		Environment: EnvMap{},
 	}
 }
 
-type ConfigFile struct {
-	Path string `json:"path"`
+func (c *Config) EditEnv() error {
+	envBytes, err := json.MarshalIndent(c.Environment, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	b, err := EditBuffer(envBytes, "core-config-*.json")
+	if err != nil {
+		return err
+	}
+
+	var e EnvMap
+	err = json.Unmarshal(b, &e)
+	if err != nil {
+		return err
+	}
+
+	c.Environment = e
+	err = c.Flush()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Config) PrintInfo() {
@@ -129,6 +157,7 @@ func (c *Config) PrintInfo() {
 	for _, file := range c.Files {
 		fmt.Printf("  %s\n", file.Path)
 	}
+	c.Environment.PrintInfo()
 }
 
 func AssertArgLen(expectedLen int, errFuncs ...func()) {

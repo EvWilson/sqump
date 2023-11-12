@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/EvWilson/sqump/config"
 	"github.com/EvWilson/sqump/core"
 	"github.com/EvWilson/sqump/handlers"
 	"github.com/EvWilson/sqump/log"
@@ -29,7 +28,7 @@ func main() {
 		if s.Err() != nil {
 			die(s.Err())
 		}
-		if strings.ToLower(s.Text()) != "y" || s.Text() == "" {
+		if strings.ToLower(s.Text()) != "y" && s.Text() != "" {
 			fmt.Println("Understood, have a nice day")
 			os.Exit(0)
 		}
@@ -46,20 +45,20 @@ func main() {
 	}
 
 	// Handle user command
-	config.AssertMinArgLen(2, handlers.PrintUsage)
+	core.AssertMinArgLen(2, handlers.PrintUsage)
 	cmd := os.Args[1]
 	switch cmd {
 	case "edit":
-		config.AssertArgLen(4)
+		core.AssertArgLen(4)
 		handlers.HandleEdit(os.Args[2], os.Args[3])
 	case "env":
-		config.AssertMinArgLen(3, handlers.PrintUsage)
+		core.AssertMinArgLen(3, handlers.PrintUsage)
 		err = handlers.HandleAllEnv(os.Args[2], os.Args)
 		if err != nil {
 			dieWithFunc(handlers.PrintUsage, err)
 		}
 	case "exec":
-		config.AssertArgLen(4, handlers.PrintUsage)
+		core.AssertArgLen(4, handlers.PrintUsage)
 		err := handlers.ExecuteRequest(os.Args[2], os.Args[3])
 		if err != nil {
 			die(err)
@@ -68,7 +67,7 @@ func main() {
 		handlers.PrintUsage()
 		return
 	case "info":
-		config.AssertMinArgLen(3, handlers.PrintUsage)
+		core.AssertMinArgLen(3, handlers.PrintUsage)
 		handlers.HandleInfo(os.Args)
 		return
 	case "init":
@@ -82,7 +81,7 @@ func main() {
 			die(err)
 		}
 	case "serve":
-		config.AssertArgLen(2, handlers.PrintUsage)
+		core.AssertArgLen(2, handlers.PrintUsage)
 		l := log.NewLogger(slog.LevelInfo)
 		mux, err := web.NewRouter(l)
 		if err != nil {

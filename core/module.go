@@ -1,9 +1,12 @@
 package core
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -47,15 +50,71 @@ func LoadState() *lua.LState {
 func fetch(L *lua.LState) int {
 	resource := L.ToString(1)
 	options := L.ToTable(2)
-	fmt.Println("resource:", resource, ", options:", options)
+
+	var buf *bytes.Buffer
+	body := options.RawGetString("body")
+	switch body.Type() {
+	case lua.LTTable:
+		bodyMap := make(map[string]any)
+		body.(*lua.LTable).ForEach(func(k, v lua.LValue) {
+			keyString, err := luaTypeToString(k)
+			if err != nil {
+				fmt.Printf("error parsing body key '%v': %v\n", k, err)
+				os.Exit(1)
+			}
+			bodyMap[keyString] = v
+		})
+		b, err := json.Marshal(bodyMap)
+		if err != nil {
+			fmt.Println("error marshaling body table in fetch:", err)
+			os.Exit(1)
+		}
+		buf = bytes.NewBuffer(b)
+	case lua.LTString:
+		str, err := luaTypeToString(body)
+		if err != nil {
+			fmt.Println("error converting body string in fetch:", err)
+			os.Exit(1)
+		}
+		buf = bytes.NewBuffer([]byte(str))
+	case lua.LTNil:
+		buf = bytes.NewBuffer([]byte{})
+	default:
+		fmt.Printf("unsupported body type for fetch: %s\n", body.Type().String())
+		fmt.Println("expected: table, string, or nil")
+		os.Exit(1)
+	}
 
 	method := stringOrDefault(options, "method", "GET")
 	timeout := intOrDefault(options, "timeout", 10)
 
-	req, err := http.NewRequest(method, resource, nil)
+	req, err := http.NewRequest(method, resource, buf)
 	if err != nil {
 		fmt.Println("error creating request:", err)
-		return 0
+		os.Exit(1)
+	}
+
+	headerTable := options.RawGetString("headers")
+	switch headerTable.Type() {
+	case lua.LTTable:
+		headerTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
+			keyString, err := luaTypeToString(k)
+			if err != nil {
+				fmt.Println("error parsing header key:", err)
+				os.Exit(1)
+			}
+			valString, err := luaTypeToString(v)
+			if err != nil {
+				fmt.Println("error parsing header value:", err)
+				os.Exit(1)
+			}
+			req.Header.Add(keyString, valString)
+		})
+	case lua.LTNil:
+		// this is fine, default to doing nothing
+	default:
+		fmt.Printf("unexpected value found for header table slot. value: %v\n", headerTable.Type())
+		os.Exit(1)
 	}
 
 	resp, err := (&http.Client{
@@ -63,19 +122,28 @@ func fetch(L *lua.LState) int {
 	}).Do(req)
 	if err != nil {
 		fmt.Println("error performing request:", err)
-		return 0
+		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("error reading response body:", err)
-		return 0
+		os.Exit(1)
 	}
 
 	L.Push(lua.LNumber(resp.StatusCode))
 	L.Push(lua.LString(string(b)))
 	return 2
+}
+
+func luaTypeToString(val lua.LValue) (string, error) {
+	switch val.Type() {
+	case lua.LTString:
+		return val.String(), nil
+	default:
+		return "", fmt.Errorf("incorrect type for value: %s\n", val.Type().String())
+	}
 }
 
 func stringOrDefault(table *lua.LTable, key, defaultVal string) string {

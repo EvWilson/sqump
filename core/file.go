@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 )
 
@@ -24,6 +25,20 @@ type Request struct {
 }
 
 type EnvMap map[string]map[string]string
+
+func (e EnvMap) PrintInfo() {
+	fmt.Println("Environment:")
+	if len(e) == 0 {
+		fmt.Println("  <none>")
+		return
+	}
+	for env, vars := range e {
+		fmt.Printf("  %s\n", env)
+		for k, v := range vars {
+			fmt.Printf("    %s: %s\n", k, v)
+		}
+	}
+}
 
 type SemVer struct {
 	Major uint `json:"major"`
@@ -137,6 +152,56 @@ func (s *Squmpfile) UpsertRequest(req *Request) *Squmpfile {
 	return s
 }
 
+func (s *Squmpfile) EditRequest(fpath, reqName string) error {
+	req, ok := s.GetRequest(reqName)
+	if !ok {
+		return ErrNotFound{
+			MissingItem: reqName,
+			Location:    s.Title,
+		}
+	}
+
+	b, err := EditBuffer([]byte(req.Script), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName))
+	if err != nil {
+		return err
+	}
+
+	req.Script = string(b)
+	err = s.UpsertRequest(req).Flush(fpath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Squmpfile) EditEnv(fpath string) error {
+	envBytes, err := json.MarshalIndent(s.Environment, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	basename := filepath.Base(s.Title)
+	b, err := EditBuffer(envBytes, fmt.Sprintf("%s-config-*.json", basename))
+	if err != nil {
+		return err
+	}
+
+	var e EnvMap
+	err = json.Unmarshal(b, &e)
+	if err != nil {
+		return err
+	}
+
+	s.Environment = e
+	err = s.Flush(fpath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Squmpfile) SetEnvVar(env, key, val string) {
 	if s.Environment == nil {
 		s.Environment = make(EnvMap)
@@ -161,15 +226,5 @@ func (s *Squmpfile) PrintInfo() {
 	for _, req := range s.Requests {
 		fmt.Printf("  %s\n", strOrNone(req.Title))
 	}
-	fmt.Println("Environment:")
-	if len(s.Environment) == 0 {
-		fmt.Println("  <none>")
-		return
-	}
-	for env, vars := range s.Environment {
-		fmt.Printf("  %s\n", env)
-		for k, v := range vars {
-			fmt.Printf("    %s: %s\n", k, v)
-		}
-	}
+	s.Environment.PrintInfo()
 }

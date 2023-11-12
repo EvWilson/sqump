@@ -8,6 +8,7 @@ edit <squmpfile path> <request> - opens given request in your $EDITOR, saved whe
 
 env - handle operations related to the environment variables to be used in requests
 |-> env set <squmpfile path> <env> <key> <value> - set the given environment mapping for the given environment
+|-> env edit <target> - target may be either "core" or a squmpfile path
 
 exec <squmpfile path> <request> - execute a given request
 

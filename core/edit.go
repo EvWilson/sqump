@@ -8,33 +8,37 @@ import (
 	"os/exec"
 )
 
-func (s *Squmpfile) EditRequest(squmpFilePath, reqName string) error {
+func EditBuffer(data []byte, tmpFilepattern string) ([]byte, error) {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		return errors.New("no value found in shell environment for EDITOR")
+		return nil, errors.New("no value found in shell environment for EDITOR")
 	}
 
-	req, ok := s.GetRequest(reqName)
-	if !ok {
-		return ErrNotFound{
-			MissingItem: reqName,
-			Location:    s.Title,
-		}
-	}
-
-	f, err := os.CreateTemp("", fmt.Sprintf("%s-%s-*.lua", s.Title, reqName))
+	f, err := os.CreateTemp("", tmpFilepattern)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	defer func(file *os.File) {
+		err = file.Close()
+		if err != nil {
+			fmt.Printf("error closing file '%s': %v\n", file.Name(), err)
+			return
+		}
+	}(f)
 	defer func(filename string) {
-		os.Remove(filename)
+		err = os.Remove(filename)
+		if err != nil {
+			fmt.Printf("error removing tmpfile '%s': %v\n", filename, err)
+			return
+		}
 	}(f.Name())
-	target, data := len(req.Script), []byte(req.Script)
+
+	target := len(data)
 	var current int64 = 0
 	for {
 		n, err := f.WriteAt(data, current)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		current += int64(n)
 		if n == target {
@@ -48,27 +52,17 @@ func (s *Squmpfile) EditRequest(squmpFilePath, reqName string) error {
 	cmd.Stderr = os.Stderr
 	err = cmd.Start()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = cmd.Wait()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	b, err := io.ReadAll(f)
 	if err != nil {
-		return err
-	}
-	req.Script = string(b)
-	err = s.UpsertRequest(req).Flush(squmpFilePath)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = f.Close()
-	if err != nil {
-		return nil
-	}
-
-	return nil
+	return b, nil
 }
