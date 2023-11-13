@@ -2,10 +2,11 @@ package web
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"runtime/debug"
 
-	"github.com/EvWilson/sqump/log"
+	"github.com/EvWilson/sqump/web/log"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -17,12 +18,12 @@ type Router struct {
 	templates TemplateCache
 }
 
-func NewRouter(l log.Logger) (*Router, error) {
+func NewRouter() (*Router, error) {
 	mux := chi.NewMux()
 
 	mux.Use(
 		middleware.Recoverer,
-		LoggingMiddleware(l),
+		LoggingMiddleware(log.NewLogger(slog.LevelInfo)),
 	)
 
 	tc, err := NewTemplateCache()

@@ -182,8 +182,8 @@ func (s *State) execute(L *lua.LState) int {
 	if ok {
 		s.exports[ident.String()] = export
 	}
-	L.Push(export)
 
+	L.Push(export)
 	return 1
 }
 

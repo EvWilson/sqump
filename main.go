@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/EvWilson/sqump/core"
 	"github.com/EvWilson/sqump/handlers"
-	"github.com/EvWilson/sqump/log"
 	"github.com/EvWilson/sqump/web"
 )
 
@@ -82,12 +80,10 @@ func main() {
 		}
 	case "serve":
 		core.AssertArgLen(2, handlers.PrintUsage)
-		l := log.NewLogger(slog.LevelInfo)
-		mux, err := web.NewRouter(l)
+		mux, err := web.NewRouter()
 		if err != nil {
 			die(err)
 		}
-		l.Info("starting server", "port", port)
 		err = http.ListenAndServe(":"+port, mux)
 		if err != nil {
 			die(err)
