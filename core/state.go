@@ -13,44 +13,55 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func LoadState() *lua.LState {
-	L := lua.NewState(lua.Options{
-		// SkipOpenLibs: true,
-	})
+type State struct {
+	*lua.LState
+	exports      ExportMap
+	currentIdent Identifier
+	environment  map[string]string
+}
 
-	// for _, pair := range []struct {
-	// 	n string
-	// 	f lua.LGFunction
-	// }{
-	// 	{lua.LoadLibName, lua.OpenPackage}, // Must be first
-	// 	{lua.BaseLibName, lua.OpenBase},
-	// 	{lua.TabLibName, lua.OpenTable},
-	// } {
-	// 	if err := L.CallByParam(lua.P{
-	// 		Fn:      L.NewFunction(pair.f),
-	// 		NRet:    0,
-	// 		Protect: true,
-	// 	}, lua.LString(pair.n)); err != nil {
-	// 		panic(err)
-	// 	}
-	// }
+type ExportMap map[string]*lua.LTable
+
+func CreateState(ident Identifier, env map[string]string) *State {
+	L := lua.NewState()
+
+	state := State{
+		LState:       L,
+		exports:      make(ExportMap),
+		currentIdent: ident,
+		environment:  env,
+	}
 
 	L.PreloadModule("sqump", func(l *lua.LState) int {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
-			"fetch": fetch,
+			"execute": state.execute,
+			"export":  state.export,
+			"fetch":   state.fetch,
 		})
 		L.Push(mod)
 		return 1
 	})
 
-	return L
+	return &state
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
-func fetch(L *lua.LState) int {
-	resource := L.ToString(1)
-	options := L.ToTable(2)
+func (s *State) fetch(L *lua.LState) int {
+	// Get params
+	resourceVal := L.Get(1)
+	if resourceVal.Type() != lua.LTString {
+		fmt.Printf("expected resource parameter to be string, instead got: %s\n", resourceVal.Type().String())
+		os.Exit(1)
+	}
+	resource := lua.LVAsString(resourceVal)
+	optionVal := L.Get(2)
+	if optionVal.Type() != lua.LTTable {
+		fmt.Printf("expected options parameter to be table, instead got: %s\n", optionVal.Type().String())
+		os.Exit(1)
+	}
+	options := optionVal.(*lua.LTable)
 
+	// Marshal body
 	var buf *bytes.Buffer
 	body := options.RawGetString("body")
 	switch body.Type() {
@@ -85,6 +96,7 @@ func fetch(L *lua.LState) int {
 		os.Exit(1)
 	}
 
+	// Get other option items
 	method := stringOrDefault(options, "method", "GET")
 	timeout := intOrDefault(options, "timeout", 10)
 
@@ -94,6 +106,7 @@ func fetch(L *lua.LState) int {
 		os.Exit(1)
 	}
 
+	// Add headers
 	headerTable := options.RawGetString("headers")
 	switch headerTable.Type() {
 	case lua.LTTable:
@@ -117,6 +130,7 @@ func fetch(L *lua.LState) int {
 		os.Exit(1)
 	}
 
+	// Perform request
 	resp, err := (&http.Client{
 		Timeout: time.Second * time.Duration(timeout),
 	}).Do(req)
@@ -126,6 +140,7 @@ func fetch(L *lua.LState) int {
 	}
 	defer resp.Body.Close()
 
+	// Read and push out response
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("error reading response body:", err)
@@ -135,6 +150,53 @@ func fetch(L *lua.LState) int {
 	L.Push(lua.LNumber(resp.StatusCode))
 	L.Push(lua.LString(string(b)))
 	return 2
+}
+
+func (s *State) execute(L *lua.LState) int {
+	requestVal := L.Get(1)
+	if requestVal.Type() != lua.LTString {
+		fmt.Printf("error: expected request parameter to be string, instead got: %s\n", requestVal.Type().String())
+		os.Exit(1)
+	}
+	request := lua.LVAsString(requestVal)
+
+	if request == s.currentIdent.Request {
+		fmt.Printf("error: self-referential request execution detected for '%s'\n", request)
+		os.Exit(1)
+	}
+	ident := s.currentIdent
+	ident.Request = request
+
+	sq, err := ReadSqumpfile(ident.Path)
+	if err != nil {
+		fmt.Printf("error reading squmpfile at '%s': %v\n", ident.Path, err)
+		os.Exit(1)
+	}
+	state, err := sq.ExecuteRequest(request)
+	if err != nil {
+		fmt.Printf("error performing request '%s': %v\n", request, err)
+		os.Exit(1)
+	}
+
+	export, ok := state.exports[ident.String()]
+	if ok {
+		s.exports[ident.String()] = export
+	}
+	L.Push(export)
+
+	return 1
+}
+
+func (s *State) export(L *lua.LState) int {
+	ctxVal := L.Get(1)
+	if ctxVal.Type() != lua.LTTable {
+		fmt.Printf("expected context parameter to be table, instead got: %s\n", ctxVal.Type().String())
+		os.Exit(1)
+	}
+	ctx := ctxVal.(*lua.LTable)
+	s.exports[s.currentIdent.String()] = ctx
+
+	return 0
 }
 
 func luaTypeToString(val lua.LValue) (string, error) {

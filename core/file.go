@@ -13,6 +13,7 @@ const defaultPerms = 0644
 var CurrentVersion = NewSemVer(0, 1, 0)
 
 type Squmpfile struct {
+	Path        string    `json:"-"`
 	Version     SemVer    `json:"version"`
 	Title       string    `json:"title"`
 	Requests    []Request `json:"requests"`
@@ -64,6 +65,7 @@ func (s SemVer) GreaterThan(other SemVer) bool {
 
 func DefaultSqumpFile() Squmpfile {
 	return Squmpfile{
+		Path:    "",
 		Version: CurrentVersion,
 		Title:   "My New Squmpfile",
 		Requests: []Request{
@@ -116,6 +118,7 @@ func ReadSqumpfile(path string) (*Squmpfile, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.Path = path
 
 	return &s, nil
 }
@@ -127,6 +130,22 @@ func WriteDefaultSqumpfile() error {
 		return err
 	}
 	return nil
+}
+
+func (s *Squmpfile) ExecuteRequest(reqName string) (*State, error) {
+	req, ok := s.GetRequest(reqName)
+	if !ok {
+		return nil, ErrNotFound{
+			MissingItem: "request",
+			Location:    reqName,
+		}
+	}
+
+	return ExecuteRequest(Identifier{
+		Path:      s.Path,
+		Squmpfile: s.Title,
+		Request:   reqName,
+	}, req.Script, s.Environment)
 }
 
 func (s *Squmpfile) GetRequest(req string) (*Request, bool) {

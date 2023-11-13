@@ -6,60 +6,69 @@ import (
 	"text/template"
 )
 
-func (s *Squmpfile) ExecuteRequest(reqName string) error {
-	req, ok := s.GetRequest(reqName)
-	if !ok {
-		return ErrNotFound{
-			MissingItem: "request",
-			Location:    reqName,
-		}
-	}
+type Identifier struct {
+	Path      string
+	Squmpfile string
+	Request   string
+}
 
-	script, err := s.ReplaceEnvTemplates(req.Script)
+func (i Identifier) String() string {
+	return fmt.Sprintf("%s.%s.%s", i.Path, i.Squmpfile, i.Request)
+}
+
+func ExecuteRequest(ident Identifier, script string, env EnvMap) (*State, error) {
+	mergedEnv, err := getMergedEnv(env)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	L := LoadState()
-	defer L.Close()
+	script, err = replaceEnvTemplates(ident.String(), script, mergedEnv)
+	if err != nil {
+		return nil, err
+	}
 
-	if err := L.DoString(script); err != nil {
+	state := CreateState(ident, mergedEnv)
+	defer state.Close()
+
+	if err := state.DoString(script); err != nil {
 		panic(err)
 	}
 
-	return nil
+	return state, nil
 }
 
-// ReplaceEnvTemplates takes a script body and inserts environment
+// replaceEnvTemplates takes a script body and inserts environment
 // data into template placeholders
-func (s *Squmpfile) ReplaceEnvTemplates(script string) (string, error) {
-	conf, err := ReadConfig()
+func replaceEnvTemplates(ident, script string, env map[string]string) (string, error) {
+	tmpl, err := template.New(ident).Parse(script)
 	if err != nil {
 		return "", err
 	}
-	squmpfileEnv, ok := s.Environment[conf.CurrentEnv]
+
+	buf := bytes.Buffer{}
+	err = tmpl.Execute(&buf, env)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+func getMergedEnv(squmpEnv EnvMap) (map[string]string, error) {
+	conf, err := ReadConfig()
+	if err != nil {
+		return nil, err
+	}
+	squmpfileEnv, ok := squmpEnv[conf.CurrentEnv]
 	if !ok {
-		return "", fmt.Errorf("no matching environment found in squmpfile '%s' for name: %s", s.Title, conf.CurrentEnv)
+		return nil, fmt.Errorf("no matching environment found in squmpfile for name: %s", conf.CurrentEnv)
 	}
 	configEnv, ok := conf.Environment[conf.CurrentEnv]
 	if !ok {
 		// Overrides in the core config are optional, so this is not a failure case
 		configEnv = make(map[string]string)
 	}
-	consolidated := mergeMaps(squmpfileEnv, configEnv)
-
-	tmpl, err := template.New(s.Title).Parse(script)
-	if err != nil {
-		return "", err
-	}
-
-	buf := bytes.Buffer{}
-	err = tmpl.Execute(&buf, consolidated)
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
+	return mergeMaps(squmpfileEnv, configEnv), nil
 }
 
 // mergeMaps will upsert later map entries into/over earlier map entries
