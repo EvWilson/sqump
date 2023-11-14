@@ -180,13 +180,21 @@ func (s *Squmpfile) EditRequest(fpath, reqName string) error {
 		}
 	}
 
-	b, err := EditBuffer([]byte(req.Script), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName))
+	cb := func(b []byte) error {
+		req.Script = string(b)
+		err := s.UpsertRequest(req).Flush(fpath)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	b, err := EditBuffer([]byte(req.Script), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName), cb)
 	if err != nil {
 		return err
 	}
 
-	req.Script = string(b)
-	err = s.UpsertRequest(req).Flush(fpath)
+	err = cb(b)
 	if err != nil {
 		return err
 	}
@@ -200,20 +208,28 @@ func (s *Squmpfile) EditEnv(fpath string) error {
 		return err
 	}
 
+	cb := func(b []byte) error {
+		var e EnvMap
+		err = json.Unmarshal(b, &e)
+		if err != nil {
+			return err
+		}
+
+		s.Environment = e
+		err = s.Flush(fpath)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	basename := filepath.Base(s.Title)
-	b, err := EditBuffer(envBytes, fmt.Sprintf("%s-config-*.json", basename))
+	b, err := EditBuffer(envBytes, fmt.Sprintf("%s-config-*.json", basename), cb)
 	if err != nil {
 		return err
 	}
 
-	var e EnvMap
-	err = json.Unmarshal(b, &e)
-	if err != nil {
-		return err
-	}
-
-	s.Environment = e
-	err = s.Flush(fpath)
+	err = cb(b)
 	if err != nil {
 		return err
 	}

@@ -130,19 +130,27 @@ func (c *Config) EditEnv() error {
 		return err
 	}
 
-	b, err := EditBuffer(envBytes, "core-config-*.json")
+	cb := func(b []byte) error {
+		var e EnvMap
+		err = json.Unmarshal(b, &e)
+		if err != nil {
+			return err
+		}
+
+		c.Environment = e
+		err = c.Flush()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	b, err := EditBuffer(envBytes, "core-config-*.json", cb)
 	if err != nil {
 		return err
 	}
 
-	var e EnvMap
-	err = json.Unmarshal(b, &e)
-	if err != nil {
-		return err
-	}
-
-	c.Environment = e
-	err = c.Flush()
+	err = cb(b)
 	if err != nil {
 		return err
 	}
