@@ -19,27 +19,29 @@ func ExecOperation() *cmder.Op {
 }
 
 func handleExec(args []string) error {
+	var err error
 	switch len(args) {
 	case 0:
-		return handleExecFuzzy()
+		err = handleExecFuzzy()
 	case 2:
 		filepath, requestName := args[0], args[1]
-		sqFile, err := core.ReadSqumpfile(filepath)
+		var sqFile *core.Squmpfile
+		sqFile, err = core.ReadSqumpfile(filepath)
 		if err != nil {
 			return err
 		}
-		conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+		var conf *core.Config
+		conf, err = core.ReadConfigFrom(core.DefaultConfigLocation())
 		if err != nil {
 			return err
 		}
 		_, err = sqFile.ExecuteRequest(conf, requestName, make(core.LoopChecker))
-		if err != nil {
-			return err
-		}
-		return nil
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
+	fmt.Println("error occurred during script execution:")
+	fmt.Print(err)
+	return nil
 }
 
 func handleExecFuzzy() error {

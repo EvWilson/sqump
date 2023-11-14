@@ -2,11 +2,11 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -20,6 +20,9 @@ type State struct {
 	currentIdent Identifier
 	environment  map[string]string
 	loopCheck    LoopChecker
+	ctx          context.Context
+	cancel       context.CancelFunc
+	err          error
 }
 
 type ExportMap map[string]*lua.LTable
@@ -33,6 +36,8 @@ func CreateState(
 	loopCheck LoopChecker,
 ) *State {
 	L := lua.NewState()
+	ctx, cancel := context.WithCancel(context.Background())
+	L.SetContext(ctx)
 
 	state := State{
 		LState:       L,
@@ -41,6 +46,9 @@ func CreateState(
 		currentIdent: ident,
 		environment:  env,
 		loopCheck:    loopCheck,
+		ctx:          ctx,
+		cancel:       cancel,
+		err:          nil,
 	}
 	state.loopCheck[state.currentIdent.String()] = true
 
@@ -62,14 +70,12 @@ func (s *State) fetch(L *lua.LState) int {
 	// Get params
 	resourceVal := L.Get(1)
 	if resourceVal.Type() != lua.LTString {
-		fmt.Printf("expected resource parameter to be string, instead got: %s\n", resourceVal.Type().String())
-		os.Exit(1)
+		return s.CancelErr("expected resource parameter to be string, instead got: %s", resourceVal.Type().String())
 	}
 	resource := lua.LVAsString(resourceVal)
 	optionVal := L.Get(2)
 	if optionVal.Type() != lua.LTTable {
-		fmt.Printf("expected options parameter to be table, instead got: %s\n", optionVal.Type().String())
-		os.Exit(1)
+		return s.CancelErr("expected options parameter to be table, instead got: %s", optionVal.Type().String())
 	}
 	options := optionVal.(*lua.LTable)
 
@@ -82,30 +88,26 @@ func (s *State) fetch(L *lua.LState) int {
 		body.(*lua.LTable).ForEach(func(k, v lua.LValue) {
 			keyString, err := luaTypeToString(k)
 			if err != nil {
-				fmt.Printf("error parsing body key '%v': %v\n", k, err)
-				os.Exit(1)
+				_ = s.CancelErr("error parsing body key '%v': %v", k, err)
+				return
 			}
 			bodyMap[keyString] = v
 		})
 		b, err := json.Marshal(bodyMap)
 		if err != nil {
-			fmt.Println("error marshaling body table in fetch:", err)
-			os.Exit(1)
+			return s.CancelErr("error marshaling body table in fetch: %v", err)
 		}
 		buf = bytes.NewBuffer(b)
 	case lua.LTString:
 		str, err := luaTypeToString(body)
 		if err != nil {
-			fmt.Println("error converting body string in fetch:", err)
-			os.Exit(1)
+			return s.CancelErr("error converting body string in fetch: %v", err)
 		}
 		buf = bytes.NewBuffer([]byte(str))
 	case lua.LTNil:
 		buf = bytes.NewBuffer([]byte{})
 	default:
-		fmt.Printf("unsupported body type for fetch: %s\n", body.Type().String())
-		fmt.Println("expected: table, string, or nil")
-		os.Exit(1)
+		return s.CancelErr("unsupported body type for fetch: %s. expected: table, string, or nil", body.Type().String())
 	}
 
 	// Get other option items
@@ -114,8 +116,7 @@ func (s *State) fetch(L *lua.LState) int {
 
 	req, err := http.NewRequest(method, resource, buf)
 	if err != nil {
-		fmt.Println("error creating request:", err)
-		os.Exit(1)
+		return s.CancelErr("error creating request: %v", err)
 	}
 
 	// Add headers
@@ -125,21 +126,20 @@ func (s *State) fetch(L *lua.LState) int {
 		reqHeaderTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
 			keyString, err := luaTypeToString(k)
 			if err != nil {
-				fmt.Println("error parsing header key:", err)
-				os.Exit(1)
+				_ = s.CancelErr("error parsing header key '%s': %v", k, err)
+				return
 			}
 			valString, err := luaTypeToString(v)
 			if err != nil {
-				fmt.Println("error parsing header value:", err)
-				os.Exit(1)
+				_ = s.CancelErr("error parsing header value '%s': %v", v, err)
+				return
 			}
 			req.Header.Add(keyString, valString)
 		})
 	case lua.LTNil:
 		// this is fine, default to doing nothing
 	default:
-		fmt.Printf("unexpected value found for header table slot. value: %v\n", reqHeaderTable.Type())
-		os.Exit(1)
+		return s.CancelErr("unexpected value found for header table slot. value: %v", reqHeaderTable.Type())
 	}
 
 	// Perform request
@@ -147,8 +147,7 @@ func (s *State) fetch(L *lua.LState) int {
 		Timeout: time.Second * time.Duration(timeout),
 	}).Do(req)
 	if err != nil {
-		fmt.Println("error performing request:", err)
-		os.Exit(1)
+		return s.CancelErr("error performing request: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -156,7 +155,7 @@ func (s *State) fetch(L *lua.LState) int {
 	respHeaderTable := &lua.LTable{}
 	for k, v := range resp.Header {
 		if len(v) != 1 {
-			fmt.Printf("response header value '%v' had unexpected length: %d\n", v, len(v))
+			return s.CancelErr("response header value '%v' had unexpected length: %d", v, len(v))
 		}
 		respHeaderTable.RawSetString(k, lua.LString(v[0]))
 	}
@@ -164,8 +163,7 @@ func (s *State) fetch(L *lua.LState) int {
 	// Read response
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("error reading response body:", err)
-		os.Exit(1)
+		return s.CancelErr("error reading response body: %v", err)
 	}
 
 	L.Push(lua.LNumber(resp.StatusCode))
@@ -177,8 +175,7 @@ func (s *State) fetch(L *lua.LState) int {
 func (s *State) execute(L *lua.LState) int {
 	requestVal := L.Get(1)
 	if requestVal.Type() != lua.LTString {
-		fmt.Printf("error: expected request parameter to be string, instead got: %s\n", requestVal.Type().String())
-		os.Exit(1)
+		return s.CancelErr("error: expected request parameter to be string, instead got: %s", requestVal.Type().String())
 	}
 	request := lua.LVAsString(requestVal)
 
@@ -186,19 +183,16 @@ func (s *State) execute(L *lua.LState) int {
 	ident.Request = request
 
 	if _, ok := s.loopCheck[ident.String()]; ok {
-		fmt.Printf("error: possible cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v\n", s.currentIdent.String(), ident.String(), s.loopCheck)
-		os.Exit(1)
+		return s.CancelErr("error: possible cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
 	}
 
 	sq, err := ReadSqumpfile(ident.Path)
 	if err != nil {
-		fmt.Printf("error reading squmpfile at '%s': %v\n", ident.Path, err)
-		os.Exit(1)
+		return s.CancelErr("error reading squmpfile at '%s': %v", ident.Path, err)
 	}
 	state, err := sq.ExecuteRequest(s.config, request, s.loopCheck)
 	if err != nil {
-		fmt.Printf("error performing request '%s': %v\n", request, err)
-		os.Exit(1)
+		return s.CancelErr("error performing request '%s': %v", request, err)
 	}
 
 	export, ok := state.exports[ident.String()]
@@ -213,12 +207,17 @@ func (s *State) execute(L *lua.LState) int {
 func (s *State) export(L *lua.LState) int {
 	ctxVal := L.Get(1)
 	if ctxVal.Type() != lua.LTTable {
-		fmt.Printf("expected context parameter to be table, instead got: %s\n", ctxVal.Type().String())
-		os.Exit(1)
+		return s.CancelErr("expected context parameter to be table, instead got: %s", ctxVal.Type().String())
 	}
 	ctx := ctxVal.(*lua.LTable)
 	s.exports[s.currentIdent.String()] = ctx
 
+	return 0
+}
+
+func (s *State) CancelErr(format string, args ...any) int {
+	s.err = fmt.Errorf(format, args...)
+	s.cancel()
 	return 0
 }
 

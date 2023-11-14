@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"text/template"
 )
@@ -36,8 +37,9 @@ func ExecuteRequest(
 	state := CreateState(conf, ident, mergedEnv, loopCheck)
 	defer state.Close()
 
-	if err := state.DoString(script); err != nil {
-		panic(err)
+	err = state.DoString(script)
+	if state.err != nil || err != nil {
+		return nil, mergeErrors(state.err, err)
 	}
 
 	return state, nil
@@ -87,4 +89,15 @@ func mergeMaps(m ...map[string]string) map[string]string {
 	}
 
 	return res
+}
+
+func mergeErrors(errs ...error) error {
+	res := ""
+	for _, e := range errs {
+		if e == nil {
+			continue
+		}
+		res += e.Error() + "\n"
+	}
+	return errors.New(res)
 }
