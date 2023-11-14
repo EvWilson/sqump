@@ -18,11 +18,14 @@ type State struct {
 	exports      ExportMap
 	currentIdent Identifier
 	environment  map[string]string
+	loopCheck    LoopChecker
 }
 
 type ExportMap map[string]*lua.LTable
 
-func CreateState(ident Identifier, env map[string]string) *State {
+type LoopChecker map[string]bool
+
+func CreateState(ident Identifier, env map[string]string, loopCheck LoopChecker) *State {
 	L := lua.NewState()
 
 	state := State{
@@ -30,7 +33,9 @@ func CreateState(ident Identifier, env map[string]string) *State {
 		exports:      make(ExportMap),
 		currentIdent: ident,
 		environment:  env,
+		loopCheck:    loopCheck,
 	}
+	state.loopCheck[state.currentIdent.String()] = true
 
 	L.PreloadModule("sqump", func(l *lua.LState) int {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
@@ -160,19 +165,20 @@ func (s *State) execute(L *lua.LState) int {
 	}
 	request := lua.LVAsString(requestVal)
 
-	if request == s.currentIdent.Request {
-		fmt.Printf("error: self-referential request execution detected for '%s'\n", request)
-		os.Exit(1)
-	}
 	ident := s.currentIdent
 	ident.Request = request
+
+	if _, ok := s.loopCheck[ident.String()]; ok {
+		fmt.Printf("error: possible cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v\n", s.currentIdent.String(), ident.String(), s.loopCheck)
+		os.Exit(1)
+	}
 
 	sq, err := ReadSqumpfile(ident.Path)
 	if err != nil {
 		fmt.Printf("error reading squmpfile at '%s': %v\n", ident.Path, err)
 		os.Exit(1)
 	}
-	state, err := sq.ExecuteRequest(request)
+	state, err := sq.ExecuteRequest(request, s.loopCheck)
 	if err != nil {
 		fmt.Printf("error performing request '%s': %v\n", request, err)
 		os.Exit(1)

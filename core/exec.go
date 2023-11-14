@@ -16,7 +16,12 @@ func (i Identifier) String() string {
 	return fmt.Sprintf("%s.%s.%s", i.Path, i.Squmpfile, i.Request)
 }
 
-func ExecuteRequest(ident Identifier, script string, env EnvMap) (*State, error) {
+func ExecuteRequest(
+	ident Identifier,
+	script string,
+	env EnvMap,
+	loopCheck LoopChecker,
+) (*State, error) {
 	mergedEnv, err := getMergedEnv(env)
 	if err != nil {
 		return nil, err
@@ -27,7 +32,7 @@ func ExecuteRequest(ident Identifier, script string, env EnvMap) (*State, error)
 		return nil, err
 	}
 
-	state := CreateState(ident, mergedEnv)
+	state := CreateState(ident, mergedEnv, loopCheck)
 	defer state.Close()
 
 	if err := state.DoString(script); err != nil {

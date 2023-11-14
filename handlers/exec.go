@@ -25,7 +25,7 @@ func handleExec(args []string) error {
 	if err != nil {
 		return err
 	}
-	_, err = sqFile.ExecuteRequest(requestName)
+	_, err = sqFile.ExecuteRequest(requestName, make(core.LoopChecker))
 	if err != nil {
 		return err
 	}

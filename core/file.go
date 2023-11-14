@@ -132,7 +132,7 @@ func WriteDefaultSqumpfile() error {
 	return nil
 }
 
-func (s *Squmpfile) ExecuteRequest(reqName string) (*State, error) {
+func (s *Squmpfile) ExecuteRequest(reqName string, loopCheck LoopChecker) (*State, error) {
 	req, ok := s.GetRequest(reqName)
 	if !ok {
 		return nil, ErrNotFound{
@@ -145,7 +145,7 @@ func (s *Squmpfile) ExecuteRequest(reqName string) (*State, error) {
 		Path:      s.Path,
 		Squmpfile: s.Title,
 		Request:   reqName,
-	}, req.Script, s.Environment)
+	}, req.Script, s.Environment, loopCheck)
 }
 
 func (s *Squmpfile) GetRequest(req string) (*Request, bool) {
