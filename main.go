@@ -9,7 +9,6 @@ import (
 
 	"github.com/EvWilson/sqump/core"
 	"github.com/EvWilson/sqump/handlers"
-	"github.com/EvWilson/sqump/handlers/cmder"
 )
 
 func main() {
@@ -26,21 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	root := cmder.NewRoot("Welcome to sqump!", os.Stdout)
-	root.Register(
-		handlers.EditOperation(),
-		handlers.ExecOperation(),
-		handlers.InfoOperation(),
-		cmder.NewOp(
-			"init",
-			"init",
-			"Create a new default squmpfile in the current directory",
-			func(args []string) error {
-				return core.WriteDefaultSqumpfile()
-			},
-		),
-		handlers.WebOperation(),
-	)
+	root := handlers.BuildRoot()
 	err = root.Handle(os.Args[1:])
 	if err != nil {
 		root.PrintUsage()

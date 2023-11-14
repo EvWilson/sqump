@@ -57,17 +57,6 @@ func (r *Root) PrintUsage() {
 		_, _ = r.writer.Write([]byte(s))
 	}
 	write(fmt.Sprintf("%s\n\n", r.description))
-	for _, op := range r.ops {
-		write(fmt.Sprintf("%s - %s\n", op.cmdName, op.short))
-	}
-	write("\n")
-}
-
-func (r *Root) PrintExtendedUsage() {
-	write := func(s string) {
-		_, _ = r.writer.Write([]byte(s))
-	}
-	write(fmt.Sprintf("%s\n\n", r.description))
 	for _, subOp := range r.ops {
 		printOps(r.writer, &subOp, "")
 		write("\n")
@@ -94,7 +83,7 @@ func (r *Root) Handle(args []string) error {
 		"help",
 		"Prints an extended help menu for all commands",
 		func(_ []string) error {
-			r.PrintExtendedUsage()
+			r.PrintUsage()
 			return nil
 		},
 	))
