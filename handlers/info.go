@@ -20,7 +20,7 @@ func InfoOperation() *cmder.Op {
 			func(args []string) error {
 				conf, err := core.ReadConfig()
 				if err != nil {
-					return fmt.Errorf("error reading config:", err)
+					return fmt.Errorf("error reading config: %v", err)
 				}
 				conf.PrintInfo()
 				return nil
