@@ -16,7 +16,7 @@ func HandleInfo(args []string) {
 		}
 		conf.PrintInfo()
 	case "file":
-		core.AssertMinArgLen(4, PrintUsage)
+		AssertMinArgLen(4, PrintUsage)
 		sq, err := core.ReadSqumpfile(args[3])
 		if err != nil {
 			fmt.Printf("error reading squmpfile at %s: %v\n", args[3], err)

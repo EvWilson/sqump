@@ -43,17 +43,17 @@ func main() {
 	}
 
 	// Handle user command
-	core.AssertMinArgLen(2, handlers.PrintUsage)
+	handlers.AssertMinArgLen(2, handlers.PrintUsage)
 	cmd := os.Args[1]
 	switch cmd {
 	case "edit":
-		core.AssertArgLen(4)
+		handlers.AssertArgLen(4)
 		err = handlers.HandleAllEdit(os.Args[2], os.Args[3])
 		if err != nil {
 			dieWithFunc(handlers.PrintUsage, err)
 		}
 	case "exec":
-		core.AssertArgLen(4, handlers.PrintUsage)
+		handlers.AssertArgLen(4, handlers.PrintUsage)
 		err := handlers.ExecuteRequest(os.Args[2], os.Args[3])
 		if err != nil {
 			die(err)
@@ -62,7 +62,7 @@ func main() {
 		handlers.PrintUsage()
 		return
 	case "info":
-		core.AssertMinArgLen(3, handlers.PrintUsage)
+		handlers.AssertMinArgLen(3, handlers.PrintUsage)
 		handlers.HandleInfo(os.Args)
 		return
 	case "init":
@@ -75,8 +75,8 @@ func main() {
 		if err != nil {
 			die(err)
 		}
-	case "serve":
-		core.AssertArgLen(2, handlers.PrintUsage)
+	case "webview":
+		handlers.AssertArgLen(2, handlers.PrintUsage)
 		mux, err := web.NewRouter()
 		if err != nil {
 			die(err)

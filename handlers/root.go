@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"os"
+	"runtime"
 
 	"github.com/EvWilson/sqump/handlers/cmder"
 )
@@ -39,4 +41,26 @@ func BuildOps() *cmder.Op {
 	)
 
 	return rootOp
+}
+
+func AssertArgLen(expectedLen int, errFuncs ...func()) {
+	_, file, line, _ := runtime.Caller(1)
+	if len(os.Args) != expectedLen {
+		fmt.Printf("error: %s:%d: expected %d arguments, received %d\n", file, line, expectedLen, len(os.Args))
+		for _, f := range errFuncs {
+			f()
+		}
+		os.Exit(1)
+	}
+}
+
+func AssertMinArgLen(minLen int, errFuncs ...func()) {
+	_, file, line, _ := runtime.Caller(1)
+	if len(os.Args) < minLen {
+		fmt.Printf("error: %s:%d: expected at least %d arguments, received %d\n", file, line, minLen, len(os.Args))
+		for _, f := range errFuncs {
+			f()
+		}
+		os.Exit(1)
+	}
 }
