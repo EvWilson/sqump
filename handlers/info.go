@@ -18,7 +18,7 @@ func InfoOperation() *cmder.Op {
 			"info core",
 			"Print basic information about the core configuration",
 			func(args []string) error {
-				conf, err := core.ReadConfig()
+				conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 				if err != nil {
 					return fmt.Errorf("error reading config: %v", err)
 				}

@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// Get config
-	_, err := core.ReadConfig()
+	_, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if errors.Is(err, core.ErrNotFound{}) {
 		err = offerDefaultConfig()
 		if err != nil {
@@ -45,11 +45,11 @@ func offerDefaultConfig() error {
 		fmt.Println("Understood, have a nice day")
 		os.Exit(0)
 	}
-	conf, err := core.CreateNewConfigFile()
+	conf, err := core.CreateNewConfigFileAt(core.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
-	err = conf.Flush()
+	err = conf.FlushTo(conf.Path)
 	if err != nil {
 		return err
 	}

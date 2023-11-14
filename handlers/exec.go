@@ -28,7 +28,7 @@ func handleExec(args []string) error {
 		if err != nil {
 			return err
 		}
-		conf, err := core.ReadConfig()
+		conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 		if err != nil {
 			return err
 		}
@@ -45,7 +45,7 @@ func handleExec(args []string) error {
 func handleExecFuzzy() error {
 	options := make([]string, 0)
 
-	conf, err := core.ReadConfig()
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}

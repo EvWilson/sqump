@@ -40,7 +40,7 @@ func EditOperation() *cmder.Op {
 func handleGlobalEdit(_ []string) error {
 	options := make([]string, 0)
 
-	conf, err := core.ReadConfig()
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func handleEditSqumpfileEnv(args []string) error {
 		return fmt.Errorf("expected 1 arg to `edit env`, got: %d", len(args))
 	}
 	arg := args[0]
-	conf, err := core.ReadConfig()
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func handleEditSqumpfileEnv(args []string) error {
 }
 
 func handleEditEnvCore(_ []string) error {
-	conf, err := core.ReadConfig()
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func handleEditReq(args []string) error {
 	}
 	arg := args[0]
 
-	conf, err := core.ReadConfig()
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}

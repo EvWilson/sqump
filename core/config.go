@@ -8,8 +8,8 @@ import (
 	"runtime"
 )
 
-// configLocation returns the location of the sqump config file
-func configLocation() string {
+// DefaultConfigLocation returns the location of the sqump config file
+func DefaultConfigLocation() string {
 	switch runtime.GOOS {
 	case "linux":
 		return filepath.Join(os.Getenv("HOME"), ".config", "sqump", "config.json")
@@ -24,14 +24,11 @@ func configLocation() string {
 }
 
 type Config struct {
+	Path        string   `json:"-"`
 	Version     SemVer   `json:"version"`
 	Files       []string `json:"files"`
 	CurrentEnv  string   `json:"current_env"`
 	Environment EnvMap   `json:"environment"`
-}
-
-func ReadConfig() (*Config, error) {
-	return ReadConfigFrom(configLocation())
 }
 
 func ReadConfigFrom(path string) (*Config, error) {
@@ -39,7 +36,7 @@ func ReadConfigFrom(path string) (*Config, error) {
 	if os.IsNotExist(err) {
 		return nil, ErrNotFound{
 			MissingItem: "config file",
-			Location:    configLocation(),
+			Location:    path,
 		}
 	} else if err != nil {
 		return nil, err
@@ -50,12 +47,9 @@ func ReadConfigFrom(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.Path = path
 
 	return &c, nil
-}
-
-func (c *Config) Flush() error {
-	return c.FlushTo(configLocation())
 }
 
 func (c *Config) FlushTo(path string) error {
@@ -83,7 +77,7 @@ func (c *Config) Register(path string) error {
 		return err
 	}
 	c.Files = append(c.Files, fullpath)
-	err = c.Flush()
+	err = c.FlushTo(c.Path)
 	return err
 }
 
@@ -104,18 +98,18 @@ func (c *Config) CheckForRegisteredFile(path string) error {
 	return fmt.Errorf("error: filepath '%s' is not registered", abs)
 }
 
-func CreateNewConfigFile() (*Config, error) {
-	err := os.MkdirAll(filepath.Dir(configLocation()), defaultPerms)
+func CreateNewConfigFileAt(path string) (*Config, error) {
+	err := os.MkdirAll(filepath.Dir(path), defaultPerms)
 	if err != nil {
 		return nil, err
 	}
-	_, err = os.Create(configLocation())
+	_, err = os.Create(path)
 	if err != nil {
 		return nil, err
 	}
 
-	c := DefaultConfig()
-	err = c.Flush()
+	c := DefaultConfig(path)
+	err = c.FlushTo(c.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +117,9 @@ func CreateNewConfigFile() (*Config, error) {
 	return c, nil
 }
 
-func DefaultConfig() *Config {
+func DefaultConfig(path string) *Config {
 	return &Config{
+		Path:        path,
 		CurrentEnv:  "staging",
 		Version:     CurrentVersion,
 		Files:       []string{},
@@ -146,7 +141,7 @@ func (c *Config) EditEnv() error {
 		}
 
 		c.Environment = e
-		err = c.Flush()
+		err = c.FlushTo(c.Path)
 		if err != nil {
 			return err
 		}
