@@ -48,14 +48,7 @@ func main() {
 	switch cmd {
 	case "edit":
 		core.AssertArgLen(4)
-		// handlers.HandleEdit(os.Args[2], os.Args[3])
 		err = handlers.HandleAllEdit(os.Args[2], os.Args[3])
-		if err != nil {
-			dieWithFunc(handlers.PrintUsage, err)
-		}
-	case "env":
-		core.AssertMinArgLen(3, handlers.PrintUsage)
-		err = handlers.HandleAllEnv(os.Args[2], os.Args)
 		if err != nil {
 			dieWithFunc(handlers.PrintUsage, err)
 		}
