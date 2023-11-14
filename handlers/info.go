@@ -10,7 +10,7 @@ import (
 func InfoOperation() *cmder.Op {
 	return cmder.NewOp(
 		"info",
-		"info <'core' or 'file'>",
+		"info <'core' or squmpfile path>",
 		"Print basic information about the requested resource",
 		cmder.NewNoopHandler("info"),
 		cmder.NewOp(

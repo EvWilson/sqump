@@ -63,10 +63,41 @@ func (r *Root) PrintUsage() {
 	write("\n")
 }
 
+func (r *Root) PrintExtendedUsage() {
+	write := func(s string) {
+		r.writer.Write([]byte(s))
+	}
+	write(fmt.Sprintf("%s\n\n", r.description))
+	for _, subOp := range r.ops {
+		printOps(r.writer, &subOp, "")
+		write("\n")
+	}
+}
+
+func printOps(writer io.Writer, op *Op, offset string) {
+	write := func(s string) {
+		writer.Write([]byte(s))
+	}
+	write(fmt.Sprintf("%s%s    %s\n%s---\n", offset, op.short, op.long, offset))
+	for _, subOp := range op.subOps {
+		printOps(writer, &subOp, offset+"    ")
+	}
+}
+
 func (r *Root) Handle(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("expected at least one argument, got none")
 	}
+
+	r.Register(NewOp(
+		"help",
+		"help",
+		"Prints an extended help menu for all commands",
+		func(_ []string) error {
+			r.PrintExtendedUsage()
+			return nil
+		},
+	))
 
 	for _, op := range r.ops {
 		if op.cmdName == args[0] {

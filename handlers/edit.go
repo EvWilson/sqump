@@ -18,7 +18,7 @@ func EditOperation() *cmder.Op {
 		handleGlobalEdit,
 		cmder.NewOp(
 			"env",
-			"edit env <squmpfile name, or 'core'>",
+			"edit env <'core' or squmpfile path>",
 			"Opens given item's environment in your $EDITOR",
 			handleEditSqumpfileEnv,
 			cmder.NewOp(
