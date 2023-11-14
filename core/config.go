@@ -24,14 +24,10 @@ func Location() string {
 }
 
 type Config struct {
-	Version     SemVer       `json:"version"`
-	Files       []ConfigFile `json:"files"`
-	CurrentEnv  string       `json:"current_env"`
-	Environment EnvMap       `json:"environment"`
-}
-
-type ConfigFile struct {
-	Path string `json:"path"`
+	Version     SemVer   `json:"version"`
+	Files       []string `json:"files"`
+	CurrentEnv  string   `json:"current_env"`
+	Environment EnvMap   `json:"environment"`
 }
 
 func ReadConfig() (*Config, error) {
@@ -78,11 +74,26 @@ func (c *Config) Register(path string) error {
 	if err != nil {
 		return err
 	}
-	c.Files = append(c.Files, ConfigFile{
-		Path: fullpath,
-	})
+	c.Files = append(c.Files, fullpath)
 	err = c.Flush()
 	return err
+}
+
+func (c *Config) CheckForRegisteredFile(path string) error {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	_, err = os.Stat(abs)
+	if err != nil {
+		return err
+	}
+	for _, fpath := range c.Files {
+		if abs == fpath {
+			return nil
+		}
+	}
+	return fmt.Errorf("error: filepath '%s' is not registered", abs)
 }
 
 func CreateNewConfigFile() (*Config, error) {
@@ -108,7 +119,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		CurrentEnv:  "staging",
 		Version:     CurrentVersion,
-		Files:       []ConfigFile{},
+		Files:       []string{},
 		Environment: EnvMap{},
 	}
 }
@@ -154,8 +165,8 @@ func (c *Config) PrintInfo() {
 		fmt.Println("  <none>")
 		return
 	}
-	for _, file := range c.Files {
-		fmt.Printf("  %s\n", file.Path)
+	for _, fpath := range c.Files {
+		fmt.Printf("  %s\n", fpath)
 	}
 	c.Environment.PrintInfo()
 }
