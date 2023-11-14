@@ -8,8 +8,8 @@ import (
 	"runtime"
 )
 
-// Location returns the location of the sqump config file
-func Location() string {
+// configLocation returns the location of the sqump config file
+func configLocation() string {
 	switch runtime.GOOS {
 	case "linux":
 		return filepath.Join(os.Getenv("HOME"), ".config", "sqump", "config.json")
@@ -31,11 +31,11 @@ type Config struct {
 }
 
 func ReadConfig() (*Config, error) {
-	b, err := os.ReadFile(Location())
+	b, err := os.ReadFile(configLocation())
 	if os.IsNotExist(err) {
 		return nil, ErrNotFound{
 			MissingItem: "config file",
-			Location:    Location(),
+			Location:    configLocation(),
 		}
 	} else if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (c *Config) Flush() error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(Location(), b, defaultPerms)
+	err = os.WriteFile(configLocation(), b, defaultPerms)
 	if err != nil {
 		return err
 	}
@@ -97,11 +97,11 @@ func (c *Config) CheckForRegisteredFile(path string) error {
 }
 
 func CreateNewConfigFile() (*Config, error) {
-	err := os.MkdirAll(filepath.Dir(Location()), defaultPerms)
+	err := os.MkdirAll(filepath.Dir(configLocation()), defaultPerms)
 	if err != nil {
 		return nil, err
 	}
-	_, err = os.Create(Location())
+	_, err = os.Create(configLocation())
 	if err != nil {
 		return nil, err
 	}
