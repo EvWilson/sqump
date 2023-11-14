@@ -31,7 +31,11 @@ type Config struct {
 }
 
 func ReadConfig() (*Config, error) {
-	b, err := os.ReadFile(configLocation())
+	return ReadConfigFrom(configLocation())
+}
+
+func ReadConfigFrom(path string) (*Config, error) {
+	b, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return nil, ErrNotFound{
 			MissingItem: "config file",
@@ -51,11 +55,15 @@ func ReadConfig() (*Config, error) {
 }
 
 func (c *Config) Flush() error {
+	return c.FlushTo(configLocation())
+}
+
+func (c *Config) FlushTo(path string) error {
 	b, err := json.MarshalIndent(&c, "", "  ")
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(configLocation(), b, defaultPerms)
+	err = os.WriteFile(path, b, defaultPerms)
 	if err != nil {
 		return err
 	}

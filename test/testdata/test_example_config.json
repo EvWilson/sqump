@@ -1,0 +1,14 @@
+{
+  "version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "files": [],
+  "current_env": "staging",
+  "environment": {
+    "staging": {
+      "test": "this_is_a_test_string"
+    }
+  }
+}

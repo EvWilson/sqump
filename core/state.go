@@ -15,6 +15,7 @@ import (
 
 type State struct {
 	*lua.LState
+	config       *Config
 	exports      ExportMap
 	currentIdent Identifier
 	environment  map[string]string
@@ -25,11 +26,17 @@ type ExportMap map[string]*lua.LTable
 
 type LoopChecker map[string]bool
 
-func CreateState(ident Identifier, env map[string]string, loopCheck LoopChecker) *State {
+func CreateState(
+	conf *Config,
+	ident Identifier,
+	env map[string]string,
+	loopCheck LoopChecker,
+) *State {
 	L := lua.NewState()
 
 	state := State{
 		LState:       L,
+		config:       conf,
 		exports:      make(ExportMap),
 		currentIdent: ident,
 		environment:  env,
@@ -178,7 +185,7 @@ func (s *State) execute(L *lua.LState) int {
 		fmt.Printf("error reading squmpfile at '%s': %v\n", ident.Path, err)
 		os.Exit(1)
 	}
-	state, err := sq.ExecuteRequest(request, s.loopCheck)
+	state, err := sq.ExecuteRequest(s.config, request, s.loopCheck)
 	if err != nil {
 		fmt.Printf("error performing request '%s': %v\n", request, err)
 		os.Exit(1)

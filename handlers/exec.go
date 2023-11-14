@@ -28,7 +28,11 @@ func handleExec(args []string) error {
 		if err != nil {
 			return err
 		}
-		_, err = sqFile.ExecuteRequest(requestName, make(core.LoopChecker))
+		conf, err := core.ReadConfig()
+		if err != nil {
+			return err
+		}
+		_, err = sqFile.ExecuteRequest(conf, requestName, make(core.LoopChecker))
 		if err != nil {
 			return err
 		}
@@ -75,7 +79,7 @@ func handleExecFuzzy() error {
 	if err != nil {
 		return err
 	}
-	_, err = sq.ExecuteRequest(pieces[1], make(core.LoopChecker))
+	_, err = sq.ExecuteRequest(conf, pieces[1], make(core.LoopChecker))
 	if err != nil {
 		return err
 	}

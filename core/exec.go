@@ -17,12 +17,13 @@ func (i Identifier) String() string {
 }
 
 func ExecuteRequest(
+	conf *Config,
 	ident Identifier,
 	script string,
 	env EnvMap,
 	loopCheck LoopChecker,
 ) (*State, error) {
-	mergedEnv, err := getMergedEnv(env)
+	mergedEnv, err := getMergedEnv(conf.CurrentEnv, env, conf.Environment)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,7 @@ func ExecuteRequest(
 		return nil, err
 	}
 
-	state := CreateState(ident, mergedEnv, loopCheck)
+	state := CreateState(conf, ident, mergedEnv, loopCheck)
 	defer state.Close()
 
 	if err := state.DoString(script); err != nil {
@@ -59,16 +60,12 @@ func replaceEnvTemplates(ident, script string, env map[string]string) (string, e
 	return buf.String(), nil
 }
 
-func getMergedEnv(squmpEnv EnvMap) (map[string]string, error) {
-	conf, err := ReadConfig()
-	if err != nil {
-		return nil, err
-	}
-	squmpfileEnv, ok := squmpEnv[conf.CurrentEnv]
+func getMergedEnv(current string, squmpEnv, coreEnv EnvMap) (map[string]string, error) {
+	squmpfileEnv, ok := squmpEnv[current]
 	if !ok {
-		return nil, fmt.Errorf("no matching environment found in squmpfile for name: %s", conf.CurrentEnv)
+		return nil, fmt.Errorf("no matching environment found in squmpfile for name: %s", current)
 	}
-	configEnv, ok := conf.Environment[conf.CurrentEnv]
+	configEnv, ok := coreEnv[current]
 	if !ok {
 		// Overrides in the core config are optional, so this is not a failure case
 		configEnv = make(map[string]string)

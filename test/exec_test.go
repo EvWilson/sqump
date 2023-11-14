@@ -10,6 +10,9 @@ import (
 )
 
 func TestBasicExample(t *testing.T) {
+	configPath := "testdata/test_example_config.json"
+	filePath := "testdata/test_example_squmpfile.json"
+
 	mux := example.MakeMux()
 	go func() {
 		err := http.ListenAndServe(":5309", mux)
@@ -18,11 +21,20 @@ func TestBasicExample(t *testing.T) {
 		}
 	}()
 
-	sq, err := core.ReadSqumpfile("testdata/test_example_squmpfile.json")
+	conf, err := core.ReadConfigFrom(configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = sq.ExecuteRequest("A", make(core.LoopChecker))
+	err = conf.Register(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sq, err := core.ReadSqumpfile(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = sq.ExecuteRequest(conf, "A", make(core.LoopChecker))
 	if err != nil {
 		t.Fatal(err)
 	}
