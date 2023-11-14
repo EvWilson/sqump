@@ -150,6 +150,17 @@ func (c *Config) EditEnv() error {
 	return nil
 }
 
+func (c *Config) SqumpfileByTitle(title string) (*Squmpfile, error) {
+	for _, fpath := range c.Files {
+		sq, err := ReadSqumpfile(fpath)
+		if err != nil {
+			return nil, err
+		}
+		return sq, nil
+	}
+	return nil, fmt.Errorf("no squmpfile found for title '%s'", title)
+}
+
 func (c *Config) PrintInfo() {
 	strOrNone := func(s string) string {
 		if s == "" {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/EvWilson/sqump/core"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/handlers/cmder"
 	"github.com/EvWilson/sqump/web"
 )
 
@@ -20,27 +21,36 @@ func main() {
 	// Get config
 	conf, err := core.ReadConfig()
 	if errors.Is(err, core.ErrNotFound{}) {
-		fmt.Println("No config file detected. Would you like to create a new one? [Y/n]")
-		s := bufio.NewScanner(os.Stdin)
-		s.Scan()
-		if s.Err() != nil {
-			die(s.Err())
-		}
-		if strings.ToLower(s.Text()) != "y" && s.Text() != "" {
-			fmt.Println("Understood, have a nice day")
-			os.Exit(0)
-		}
-		conf, err = core.CreateNewConfigFile()
-		if err != nil {
-			die(err)
-		}
-		err = conf.Flush()
+		err = offerDefaultConfig()
 		if err != nil {
 			die(err)
 		}
 	} else if err != nil {
 		die(err)
 	}
+
+	root := cmder.NewRoot("Welcome to sqump!", os.Stdout)
+	root.Register(
+		handlers.EditOperation(),
+		handlers.ExecOperation(),
+		handlers.InfoOperation(),
+		cmder.NewOp(
+			"init",
+			"init",
+			"Create a new default squmpfile in the current directory",
+			func(args []string) error {
+				return core.WriteDefaultSqumpfile()
+			},
+		),
+		handlers.WebOperation(),
+	)
+	err = root.Handle(os.Args[1:])
+	if err != nil {
+		root.PrintUsage()
+		fmt.Println("error while handling:", err)
+		os.Exit(1)
+	}
+	os.Exit(0)
 
 	// Handle user command
 	handlers.AssertMinArgLen(2, handlers.PrintUsage)
@@ -103,4 +113,26 @@ func dieLeveled(err error) {
 	_, _, line, _ := runtime.Caller(2)
 	fmt.Printf("error: line: %d: %v\n", line, err)
 	os.Exit(1)
+}
+
+func offerDefaultConfig() error {
+	fmt.Println("No config file detected. Would you like to create a new one? [Y/n]")
+	s := bufio.NewScanner(os.Stdin)
+	s.Scan()
+	if s.Err() != nil {
+		return s.Err()
+	}
+	if strings.ToLower(s.Text()) != "y" && s.Text() != "" {
+		fmt.Println("Understood, have a nice day")
+		os.Exit(0)
+	}
+	conf, err := core.CreateNewConfigFile()
+	if err != nil {
+		return err
+	}
+	err = conf.Flush()
+	if err != nil {
+		return err
+	}
+	return nil
 }

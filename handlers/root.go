@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-
-	"github.com/EvWilson/sqump/handlers/cmder"
 )
 
 func PrintUsage() {
@@ -30,17 +28,6 @@ register <filename> - registers a squmpfile to be used by the application
 
 serve - open the web view for collection editing and requests
 `)
-}
-
-func BuildOps() *cmder.Op {
-	rootOp := cmder.NewOp(
-		"sqump",
-		"short",
-		"long",
-		func() {},
-	)
-
-	return rootOp
 }
 
 func AssertArgLen(expectedLen int, errFuncs ...func()) {
