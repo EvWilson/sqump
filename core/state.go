@@ -119,10 +119,10 @@ func (s *State) fetch(L *lua.LState) int {
 	}
 
 	// Add headers
-	headerTable := options.RawGetString("headers")
-	switch headerTable.Type() {
+	reqHeaderTable := options.RawGetString("headers")
+	switch reqHeaderTable.Type() {
 	case lua.LTTable:
-		headerTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
+		reqHeaderTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
 			keyString, err := luaTypeToString(k)
 			if err != nil {
 				fmt.Println("error parsing header key:", err)
@@ -138,7 +138,7 @@ func (s *State) fetch(L *lua.LState) int {
 	case lua.LTNil:
 		// this is fine, default to doing nothing
 	default:
-		fmt.Printf("unexpected value found for header table slot. value: %v\n", headerTable.Type())
+		fmt.Printf("unexpected value found for header table slot. value: %v\n", reqHeaderTable.Type())
 		os.Exit(1)
 	}
 
@@ -152,7 +152,16 @@ func (s *State) fetch(L *lua.LState) int {
 	}
 	defer resp.Body.Close()
 
-	// Read and push out response
+	// Gather headers into a lua table
+	respHeaderTable := &lua.LTable{}
+	for k, v := range resp.Header {
+		if len(v) != 1 {
+			fmt.Printf("response header value '%v' had unexpected length: %d\n", v, len(v))
+		}
+		respHeaderTable.RawSetString(k, lua.LString(v[0]))
+	}
+
+	// Read response
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("error reading response body:", err)
@@ -160,8 +169,9 @@ func (s *State) fetch(L *lua.LState) int {
 	}
 
 	L.Push(lua.LNumber(resp.StatusCode))
+	L.Push(respHeaderTable)
 	L.Push(lua.LString(string(b)))
-	return 2
+	return 3
 }
 
 func (s *State) execute(L *lua.LState) int {

@@ -30,7 +30,7 @@ func EditOperation() *cmder.Op {
 		),
 		cmder.NewOp(
 			"req",
-			"edit req <squmpfile path>",
+			"edit req <squmpfile path> <request name>",
 			"Opens selected request from given squmpfile for editing in your $EDITOR",
 			handleEditReq,
 		),
@@ -126,43 +126,47 @@ func handleEditEnvCore(_ []string) error {
 }
 
 func handleEditReq(args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("expected 1 arg to `edit req`, got: %d", len(args))
+	if len(args) != 2 {
+		return fmt.Errorf("expected 2 args to `edit req`, got: %d", len(args))
 	}
-	arg := args[0]
+	squmpfileName, requestName := args[0], args[1]
 
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
 
-	err = conf.CheckForRegisteredFile(arg)
+	err = conf.CheckForRegisteredFile(squmpfileName)
 	if err != nil {
 		return err
 	}
-	sq, err := core.ReadSqumpfile(arg)
-	if err != nil {
-		return err
-	}
-
-	idx, err := fuzzyfinder.Find(
-		sq.Requests,
-		func(i int) string {
-			return sq.Requests[i].Title
-		},
-		fuzzyfinder.WithPreviewWindow(func(i, width, height int) string {
-			if i < 0 || i >= len(sq.Requests) {
-				return ""
-			}
-			req := sq.Requests[i]
-			return fmt.Sprintf("Title: %s\nScript:\n\n%s\n", req.Title, req.Script)
-		}),
-	)
+	sq, err := core.ReadSqumpfile(squmpfileName)
 	if err != nil {
 		return err
 	}
 
-	err = sq.EditRequest(sq.Requests[idx].Title)
+	// idx, err := fuzzyfinder.Find(
+	// 	sq.Requests,
+	// 	func(i int) string {
+	// 		return sq.Requests[i].Title
+	// 	},
+	// 	fuzzyfinder.WithPreviewWindow(func(i, width, height int) string {
+	// 		if i < 0 || i >= len(sq.Requests) {
+	// 			return ""
+	// 		}
+	// 		req := sq.Requests[i]
+	// 		return fmt.Sprintf("Title: %s\nScript:\n\n%s\n", req.Title, req.Script)
+	// 	}),
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	// err = sq.EditRequest(sq.Requests[idx].Title)
+	// if err != nil {
+	// 	return err
+	// }
+
+	err = sq.EditRequest(requestName)
 	if err != nil {
 		return err
 	}
