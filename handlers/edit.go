@@ -75,7 +75,7 @@ func handleGlobalEdit(_ []string) error {
 		if err != nil {
 			return err
 		}
-		return sq.EditEnv(sq.Path)
+		return sq.EditEnv()
 	} else {
 		pieces := strings.Split(option, ".")
 		if len(pieces) != 2 {
@@ -85,7 +85,7 @@ func handleGlobalEdit(_ []string) error {
 		if err != nil {
 			return err
 		}
-		return sq.EditRequest(sq.Path, pieces[1])
+		return sq.EditRequest(pieces[1])
 	}
 }
 
@@ -106,7 +106,7 @@ func handleEditSqumpfileEnv(args []string) error {
 	if err != nil {
 		return err
 	}
-	err = sq.EditEnv(arg)
+	err = sq.EditEnv()
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func handleEditReq(args []string) error {
 		return err
 	}
 
-	err = sq.EditEnv(sq.Requests[idx].Title)
+	err = sq.EditRequest(sq.Requests[idx].Title)
 	if err != nil {
 		return err
 	}

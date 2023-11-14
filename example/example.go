@@ -1,4 +1,4 @@
-package main
+package example
 
 import (
 	"crypto/sha256"
@@ -8,25 +8,19 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 )
 
 const (
-	constUser = "example"
-	constPass = "sqump"
+	User = "example"
+	Pass = "sqump"
 )
 
-func main() {
+func MakeMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("/", LoggingMiddleware(http.NotFoundHandler().ServeHTTP))
 	mux.HandleFunc("/getAuth", LoggingMiddleware(GetAuth))
 	mux.HandleFunc("/createThing", LoggingMiddleware(BasicAuthMiddleware(CreateThing)))
-	fmt.Println("starting server at 5000")
-	err := http.ListenAndServe(":5000", mux)
-	if err != nil {
-		fmt.Println("error while serving:", err)
-		os.Exit(1)
-	}
+	return mux
 }
 
 func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -40,8 +34,8 @@ func BasicAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	checkAuth := func(user, pass string) bool {
 		usernameHash := sha256.Sum256([]byte(user))
 		passwordHash := sha256.Sum256([]byte(pass))
-		expectedUsernameHash := sha256.Sum256([]byte(constUser))
-		expectedPasswordHash := sha256.Sum256([]byte(constPass))
+		expectedUsernameHash := sha256.Sum256([]byte(User))
+		expectedPasswordHash := sha256.Sum256([]byte(Pass))
 		usernameMatch := (subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1)
 		passwordMatch := (subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1)
 		return usernameMatch && passwordMatch
@@ -67,7 +61,7 @@ func GetAuth(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("method not allowed"))
 		return
 	}
-	data := []byte(constUser + ":" + constPass)
+	data := []byte(User + ":" + Pass)
 	b := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
 	base64.StdEncoding.Encode(b, data)
 	_, _ = w.Write(b)

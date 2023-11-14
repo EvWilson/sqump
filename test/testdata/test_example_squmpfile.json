@@ -1,0 +1,17 @@
+{
+  "version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "title": "My_New_Squmpfile",
+  "requests": [
+    {
+      "title": "A",
+      "script": "print('hello, world')\n\nlocal s = require('sqump')\n\nlocal status, resp = s.fetch('http://localhost:5309', {\n\ttimeout = 5\n})\n\nprint('status: ', status, ', resp: ', resp)\n"
+    }
+  ],
+  "environment": {
+    "staging": {}
+  }
+}

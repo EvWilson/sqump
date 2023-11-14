@@ -65,9 +65,9 @@ func (s SemVer) GreaterThan(other SemVer) bool {
 
 func DefaultSqumpFile() Squmpfile {
 	return Squmpfile{
-		Path:    "",
+		Path:    "Squmpfile.json",
 		Version: CurrentVersion,
-		Title:   "My New Squmpfile",
+		Title:   "My_New_Squmpfile",
 		Requests: []Request{
 			{
 				Title:  "NewReq",
@@ -90,12 +90,12 @@ func (e ErrNotFound) Is(target error) bool {
 	return reflect.TypeOf(target) == reflect.TypeOf(ErrNotFound{})
 }
 
-func (s *Squmpfile) Flush(path string) error {
+func (s *Squmpfile) Flush() error {
 	b, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(path, b, defaultPerms)
+	err = os.WriteFile(s.Path, b, defaultPerms)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func ReadSqumpfile(path string) (*Squmpfile, error) {
 
 func WriteDefaultSqumpfile() error {
 	sf := DefaultSqumpFile()
-	err := sf.Flush("Squmpfile")
+	err := sf.Flush()
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (s *Squmpfile) UpsertRequest(req *Request) *Squmpfile {
 	return s
 }
 
-func (s *Squmpfile) EditRequest(fpath, reqName string) error {
+func (s *Squmpfile) EditRequest(reqName string) error {
 	req, ok := s.GetRequest(reqName)
 	if !ok {
 		return ErrNotFound{
@@ -182,7 +182,7 @@ func (s *Squmpfile) EditRequest(fpath, reqName string) error {
 
 	cb := func(b []byte) error {
 		req.Script = string(b)
-		err := s.UpsertRequest(req).Flush(fpath)
+		err := s.UpsertRequest(req).Flush()
 		if err != nil {
 			return err
 		}
@@ -202,7 +202,7 @@ func (s *Squmpfile) EditRequest(fpath, reqName string) error {
 	return nil
 }
 
-func (s *Squmpfile) EditEnv(fpath string) error {
+func (s *Squmpfile) EditEnv() error {
 	envBytes, err := json.MarshalIndent(s.Environment, "", "  ")
 	if err != nil {
 		return err
@@ -216,7 +216,7 @@ func (s *Squmpfile) EditEnv(fpath string) error {
 		}
 
 		s.Environment = e
-		err = s.Flush(fpath)
+		err = s.Flush()
 		if err != nil {
 			return err
 		}
