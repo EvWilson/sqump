@@ -54,7 +54,7 @@ func (r *Root) Register(ops ...*Op) {
 
 func (r *Root) PrintUsage() {
 	write := func(s string) {
-		r.writer.Write([]byte(s))
+		_, _ = r.writer.Write([]byte(s))
 	}
 	write(fmt.Sprintf("%s\n\n", r.description))
 	for _, op := range r.ops {
@@ -65,7 +65,7 @@ func (r *Root) PrintUsage() {
 
 func (r *Root) PrintExtendedUsage() {
 	write := func(s string) {
-		r.writer.Write([]byte(s))
+		_, _ = r.writer.Write([]byte(s))
 	}
 	write(fmt.Sprintf("%s\n\n", r.description))
 	for _, subOp := range r.ops {
@@ -76,7 +76,7 @@ func (r *Root) PrintExtendedUsage() {
 
 func printOps(writer io.Writer, op *Op, offset string) {
 	write := func(s string) {
-		writer.Write([]byte(s))
+		_, _ = writer.Write([]byte(s))
 	}
 	write(fmt.Sprintf("%s%s    %s\n%s---\n", offset, op.short, op.long, offset))
 	for _, subOp := range op.subOps {

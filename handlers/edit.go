@@ -62,6 +62,9 @@ func handleGlobalEdit(_ []string) error {
 			return options[i]
 		},
 	)
+	if err != nil {
+		return err
+	}
 
 	option := options[idx]
 	if option == "core.env" {
@@ -155,6 +158,9 @@ func handleEditReq(args []string) error {
 			return fmt.Sprintf("Title: %s\nScript:\n\n%s\n", req.Title, req.Script)
 		}),
 	)
+	if err != nil {
+		return err
+	}
 
 	err = sq.EditEnv(sq.Requests[idx].Title)
 	if err != nil {

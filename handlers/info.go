@@ -36,7 +36,7 @@ func InfoOperation() *cmder.Op {
 				}
 				sq, err := core.ReadSqumpfile(args[0])
 				if err != nil {
-					fmt.Errorf("error reading squmpfile at %s: %v\n", args[0], err)
+					return fmt.Errorf("error reading squmpfile at %s: %v\n", args[0], err)
 				}
 				sq.PrintInfo()
 				return nil

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
 const (
@@ -21,7 +22,11 @@ func main() {
 	mux.HandleFunc("/getAuth", LoggingMiddleware(GetAuth))
 	mux.HandleFunc("/createThing", LoggingMiddleware(BasicAuthMiddleware(CreateThing)))
 	fmt.Println("starting server at 5000")
-	http.ListenAndServe(":5000", mux)
+	err := http.ListenAndServe(":5000", mux)
+	if err != nil {
+		fmt.Println("error while serving:", err)
+		os.Exit(1)
+	}
 }
 
 func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -59,13 +64,13 @@ func BasicAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 func GetAuth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("method not allowed"))
+		_, _ = w.Write([]byte("method not allowed"))
 		return
 	}
 	data := []byte(constUser + ":" + constPass)
 	b := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
 	base64.StdEncoding.Encode(b, data)
-	w.Write(b)
+	_, _ = w.Write(b)
 }
 
 func CreateThing(w http.ResponseWriter, r *http.Request) {

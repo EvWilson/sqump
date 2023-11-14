@@ -156,7 +156,9 @@ func (c *Config) SqumpfileByTitle(title string) (*Squmpfile, error) {
 		if err != nil {
 			return nil, err
 		}
-		return sq, nil
+		if sq.Title == title {
+			return sq, nil
+		}
 	}
 	return nil, fmt.Errorf("no squmpfile found for title '%s'", title)
 }
