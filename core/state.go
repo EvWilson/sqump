@@ -238,12 +238,29 @@ func (s *State) printResponse(L *lua.LState) int {
 		return s.CancelErr("error: print_response: while retrieving body: %v", err)
 	}
 
+	isJson := func(headers map[string]string) bool {
+		for k, v := range headers {
+			if k == "Content-Type" && v == "application/json" {
+				return true
+			}
+		}
+		return false
+	}
+	if isJson(headers) {
+		var buf bytes.Buffer
+		err := json.Indent(&buf, []byte(body), "", "  ")
+		if err != nil {
+			return s.CancelErr("error: print_response: while trying to indent json response body: %v", err)
+		}
+		body = buf.String()
+	}
+
 	fmt.Printf("Status Code: %d\n\n", code)
 	fmt.Println("Headers:")
 	for k, v := range headers {
 		fmt.Printf("%s: %s\n", k, v)
 	}
-	fmt.Printf("\nBody: %s\n", body)
+	fmt.Printf("\nBody:\n%s\n", body)
 
 	return 0
 }
