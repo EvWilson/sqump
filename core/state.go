@@ -311,12 +311,14 @@ func getMapFromTable(table *lua.LTable, key string) (map[string]string, error) {
 	switch innerTable.Type() {
 	case lua.LTTable:
 		innerTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
-			keyString, err := luaTypeToString(k)
+			var keyString string
+			keyString, err = luaTypeToString(k)
 			if err != nil {
 				err = fmt.Errorf("error parsing header key '%s': %v", k, err)
 				return
 			}
-			valString, err := luaTypeToString(v)
+			var valString string
+			valString, err = luaTypeToString(v)
 			if err != nil {
 				err = fmt.Errorf("error parsing header value '%s': %v", v, err)
 				return
