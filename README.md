@@ -117,3 +117,8 @@ print_response(response)
     Parameters:
         response - a table, holding the result of `fetch`, to be printed to the console
 ```
+
+### Planned Work
+- Finish working on a basic web view for the less CLI-inclined
+- More testing: cover import cycles, improper params
+- Someday, as necessary, automated config migration
