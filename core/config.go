@@ -111,7 +111,7 @@ func (c *Config) CheckForRegisteredFile(path string) error {
 }
 
 func CreateNewConfigFileAt(path string) (*Config, error) {
-	err := os.MkdirAll(filepath.Dir(path), defaultPerms)
+	err := os.MkdirAll(filepath.Dir(path), 0755)
 	if err != nil {
 		return nil, err
 	}

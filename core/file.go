@@ -82,7 +82,11 @@ func DefaultSqumpFile() Squmpfile {
 				Script: "print('hello, world!')",
 			},
 		},
-		Environment: EnvMap{},
+		Environment: EnvMap{
+			"staging": {
+				"hello": "world",
+			},
+		},
 	}
 }
 
