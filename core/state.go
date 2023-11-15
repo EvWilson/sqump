@@ -54,9 +54,10 @@ func CreateState(
 
 	L.PreloadModule("sqump", func(l *lua.LState) int {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
-			"execute": state.execute,
-			"export":  state.export,
-			"fetch":   state.fetch,
+			"execute":        state.execute,
+			"export":         state.export,
+			"fetch":          state.fetch,
+			"print_response": state.printResponse,
 		})
 		L.Push(mod)
 		return 1
@@ -217,6 +218,36 @@ func (s *State) export(L *lua.LState) int {
 	return 0
 }
 
+func (s *State) printResponse(L *lua.LState) int {
+	respVal := L.Get(1)
+	if respVal.Type() != lua.LTTable {
+		return s.CancelErr("expected response parameter to be table, instead got: %s", respVal.Type().String())
+	}
+	resp := respVal.(*lua.LTable)
+
+	code, err := getInt(resp, "status")
+	if err != nil {
+		return s.CancelErr("error: print_response: while retrieving status code: %v", err)
+	}
+	headers, err := getMapFromTable(resp, "headers")
+	if err != nil {
+		return s.CancelErr("error: print_response: while retrieving map from table: %v", err)
+	}
+	body, err := getString(resp, "body")
+	if err != nil {
+		return s.CancelErr("error: print_response: while retrieving body: %v", err)
+	}
+
+	fmt.Printf("Status Code: %d\n\n", code)
+	fmt.Println("Headers:")
+	for k, v := range headers {
+		fmt.Printf("%s: %s\n", k, v)
+	}
+	fmt.Printf("\nBody: %s\n", body)
+
+	return 0
+}
+
 func (s *State) CancelErr(format string, args ...any) int {
 	s.err = fmt.Errorf(format, args...)
 	s.cancel()
@@ -232,26 +263,73 @@ func luaTypeToString(val lua.LValue) (string, error) {
 	}
 }
 
-func stringOrDefault(table *lua.LTable, key, defaultVal string) string {
+func getString(table *lua.LTable, key string) (string, error) {
 	val := table.RawGetString(key)
 	switch val.Type() {
 	case lua.LTString:
-		return val.String()
+		return val.String(), nil
 	default:
-		return defaultVal
+		return "", fmt.Errorf("expected type '%s', got: '%s'", lua.LTString.String(), val.Type().String())
 	}
 }
 
-func intOrDefault(table *lua.LTable, key string, defaultVal int) int {
+func stringOrDefault(table *lua.LTable, key, defaultVal string) string {
+	res, err := getString(table, key)
+	if err != nil {
+		return defaultVal
+	}
+	return res
+}
+
+func getInt(table *lua.LTable, key string) (int, error) {
 	val := table.RawGetString(key)
 	switch val.Type() {
 	case lua.LTNumber:
 		res, err := strconv.Atoi(val.String())
 		if err != nil {
-			return defaultVal
+			return -1, err
 		}
-		return res
+		return res, nil
 	default:
+		return -1, fmt.Errorf("expected type '%s', got: '%s'", lua.LTNumber.String(), val.Type().String())
+	}
+}
+
+func intOrDefault(table *lua.LTable, key string, defaultVal int) int {
+	res, err := getInt(table, key)
+	if err != nil {
 		return defaultVal
 	}
+	return res
+}
+
+func getMapFromTable(table *lua.LTable, key string) (map[string]string, error) {
+	ret := make(map[string]string)
+	var err error
+
+	innerTable := table.RawGetString(key)
+	switch innerTable.Type() {
+	case lua.LTTable:
+		innerTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
+			keyString, err := luaTypeToString(k)
+			if err != nil {
+				err = fmt.Errorf("error parsing header key '%s': %v", k, err)
+				return
+			}
+			valString, err := luaTypeToString(v)
+			if err != nil {
+				err = fmt.Errorf("error parsing header value '%s': %v", v, err)
+				return
+			}
+			ret[keyString] = valString
+		})
+		if err != nil {
+			return nil, err
+		}
+	case lua.LTNil:
+		// this is fine, default to doing nothing
+	default:
+		return nil, fmt.Errorf("unexpected value found for header table slot. value: %v", innerTable.Type())
+	}
+	return ret, nil
 }

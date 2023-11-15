@@ -112,4 +112,8 @@ fetch(resource, opts) -> response
             status  - a number, the status code of the response
             headers - a table, the headers of the response
             body    - a string, the body sent in the response
+
+print_response(response)
+    Parameters:
+        response - a table, holding the result of `fetch`, to be printed to the console
 ```
