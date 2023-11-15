@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // DefaultConfigLocation returns the location of the sqump config file
@@ -52,12 +53,12 @@ func ReadConfigFrom(path string) (*Config, error) {
 	return &c, nil
 }
 
-func (c *Config) FlushTo(path string) error {
+func (c *Config) Flush() error {
 	b, err := json.MarshalIndent(&c, "", "  ")
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(path, b, defaultPerms)
+	err = os.WriteFile(c.Path, b, defaultPerms)
 	if err != nil {
 		return err
 	}
@@ -77,8 +78,19 @@ func (c *Config) Register(path string) error {
 		return err
 	}
 	c.Files = append(c.Files, fullpath)
-	err = c.FlushTo(c.Path)
+	err = c.Flush()
 	return err
+}
+
+func (c *Config) Unregister(path string) error {
+	for i, registered := range c.Files {
+		if registered == path {
+			c.Files = append(c.Files[:i], c.Files[i+1:]...)
+			return c.Flush()
+		}
+	}
+
+	return fmt.Errorf("no registered squmpfile found for path '%s'", path)
 }
 
 func (c *Config) CheckForRegisteredFile(path string) error {
@@ -109,7 +121,7 @@ func CreateNewConfigFileAt(path string) (*Config, error) {
 	}
 
 	c := DefaultConfig(path)
-	err = c.FlushTo(c.Path)
+	err = c.Flush()
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +153,7 @@ func (c *Config) EditEnv() error {
 		}
 
 		c.Environment = e
-		err = c.FlushTo(c.Path)
+		err = c.Flush()
 		if err != nil {
 			return err
 		}
@@ -153,12 +165,21 @@ func (c *Config) EditEnv() error {
 		return err
 	}
 
-	err = cb(b)
+	return cb(b)
+}
+
+func (c *Config) EditCurrentEnv() error {
+	cb := func(b []byte) error {
+		c.CurrentEnv = strings.TrimSpace(string(b))
+		return c.Flush()
+	}
+
+	b, err := EditBuffer([]byte(c.CurrentEnv), "core-config-current-env-*.json", cb)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return cb(b)
 }
 
 func (c *Config) SqumpfileByTitle(title string) (*Squmpfile, error) {

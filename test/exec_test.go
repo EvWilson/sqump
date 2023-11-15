@@ -18,7 +18,7 @@ func TestExample(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		err = beginningConfig.FlushTo(beginningConfig.Path)
+		err = beginningConfig.Flush()
 		if err != nil {
 			t.Fatal("error cleaning up:", err)
 		}

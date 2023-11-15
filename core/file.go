@@ -25,6 +25,13 @@ type Request struct {
 	Script string `json:"script"`
 }
 
+func NewRequest(title string) *Request {
+	return &Request{
+		Title:  title,
+		Script: "print('hello world!')",
+	}
+}
+
 type EnvMap map[string]map[string]string
 
 func (e EnvMap) PrintInfo() {
@@ -95,11 +102,7 @@ func (s *Squmpfile) Flush() error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(s.Path, b, defaultPerms)
-	if err != nil {
-		return err
-	}
-	return nil
+	return os.WriteFile(s.Path, b, defaultPerms)
 }
 
 func ReadSqumpfile(path string) (*Squmpfile, error) {
@@ -125,11 +128,7 @@ func ReadSqumpfile(path string) (*Squmpfile, error) {
 
 func WriteDefaultSqumpfile() error {
 	sf := DefaultSqumpFile()
-	err := sf.Flush()
-	if err != nil {
-		return err
-	}
-	return nil
+	return sf.Flush()
 }
 
 func (s *Squmpfile) ExecuteRequest(conf *Config, reqName string, loopCheck LoopChecker) (*State, error) {
@@ -159,6 +158,16 @@ func (s *Squmpfile) GetRequest(req string) (*Request, bool) {
 	return nil, false
 }
 
+func (s *Squmpfile) RemoveRequest(title string) error {
+	for i, r := range s.Requests {
+		if r.Title == title {
+			s.Requests = append(s.Requests[:i], s.Requests[i+1:]...)
+			return s.Flush()
+		}
+	}
+	return fmt.Errorf("no request titled '%s' found in squmpfile '%s'", title, s.Title)
+}
+
 func (s *Squmpfile) UpsertRequest(req *Request) *Squmpfile {
 	found := false
 	for i, r := range s.Requests {
@@ -184,11 +193,7 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 
 	cb := func(b []byte) error {
 		req.Script = string(b)
-		err := s.UpsertRequest(req).Flush()
-		if err != nil {
-			return err
-		}
-		return nil
+		return s.UpsertRequest(req).Flush()
 	}
 
 	b, err := EditBuffer([]byte(req.Script), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName), cb)
@@ -196,33 +201,24 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 		return err
 	}
 
-	err = cb(b)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cb(b)
 }
 
 func (s *Squmpfile) EditEnv() error {
-	envBytes, err := json.MarshalIndent(s.Environment, "", "  ")
-	if err != nil {
-		return err
-	}
-
 	cb := func(b []byte) error {
 		var e EnvMap
-		err = json.Unmarshal(b, &e)
+		err := json.Unmarshal(b, &e)
 		if err != nil {
 			return err
 		}
 
 		s.Environment = e
-		err = s.Flush()
-		if err != nil {
-			return err
-		}
-		return nil
+		return s.Flush()
+	}
+
+	envBytes, err := json.MarshalIndent(s.Environment, "", "  ")
+	if err != nil {
+		return err
 	}
 
 	basename := filepath.Base(s.Title)
@@ -231,12 +227,22 @@ func (s *Squmpfile) EditEnv() error {
 		return err
 	}
 
-	err = cb(b)
+	return cb(b)
+}
+
+func (s *Squmpfile) EditTitle() error {
+	cb := func(b []byte) error {
+		s.Title = string(b)
+		return s.Flush()
+	}
+
+	basename := filepath.Base(s.Title)
+	b, err := EditBuffer([]byte(s.Title), fmt.Sprintf("%s-title-*.json", basename), cb)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return cb(b)
 }
 
 func (s *Squmpfile) SetEnvVar(env, key, val string) {

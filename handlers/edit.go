@@ -44,13 +44,14 @@ func handleGlobalEdit(_ []string) error {
 	if err != nil {
 		return err
 	}
-	options = append(options, "core.env")
+	options = append(options, "core.env", "core.current_env")
 	for _, path := range conf.Files {
 		sq, err := core.ReadSqumpfile(path)
 		if err != nil {
 			return err
 		}
 		options = append(options, fmt.Sprintf("%s.env", sq.Title))
+		options = append(options, fmt.Sprintf("%s.title", sq.Title))
 		for _, req := range sq.Requests {
 			options = append(options, fmt.Sprintf("%s.%s", sq.Title, req.Title))
 		}
@@ -69,6 +70,8 @@ func handleGlobalEdit(_ []string) error {
 	option := options[idx]
 	if option == "core.env" {
 		return conf.EditEnv()
+	} else if option == "core.current_env" {
+		return conf.EditCurrentEnv()
 	} else if strings.HasSuffix(option, ".env") {
 		title := strings.TrimSuffix(option, ".env")
 		sq, err := conf.SqumpfileByTitle(title)
@@ -76,6 +79,13 @@ func handleGlobalEdit(_ []string) error {
 			return err
 		}
 		return sq.EditEnv()
+	} else if strings.HasSuffix(option, ".title") {
+		title := strings.TrimSuffix(option, ".title")
+		sq, err := conf.SqumpfileByTitle(title)
+		if err != nil {
+			return err
+		}
+		return sq.EditTitle()
 	} else {
 		pieces := strings.Split(option, ".")
 		if len(pieces) != 2 {

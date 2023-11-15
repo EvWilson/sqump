@@ -49,7 +49,7 @@ func offerDefaultConfig() error {
 	if err != nil {
 		return err
 	}
-	err = conf.FlushTo(conf.Path)
+	err = conf.Flush()
 	if err != nil {
 		return err
 	}

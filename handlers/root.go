@@ -12,6 +12,11 @@ func BuildRoot() *cmder.Root {
 	root.Register(
 		EditOperation(),
 		ExecOperation(),
+		AddOperation(),
+		RemoveOperation(),
+		RegisterOperation(),
+		UnregisterOperation(),
+		AddOperation(),
 		InfoOperation(),
 		cmder.NewOp(
 			"init",
