@@ -41,7 +41,7 @@ func AddOperation() *cmder.Op {
 					return err
 				}
 				sq.Requests = append(sq.Requests, *core.NewRequest(reqTitle))
-				return nil
+				return sq.Flush()
 			},
 		),
 	)
