@@ -39,8 +39,10 @@ func handleExec(args []string) error {
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
-	fmt.Println("error occurred during script execution:")
-	fmt.Print(err)
+	if err != nil {
+		fmt.Println("error occurred during script execution:")
+		fmt.Print(err)
+	}
 	return nil
 }
 

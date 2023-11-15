@@ -166,10 +166,12 @@ func (s *State) fetch(L *lua.LState) int {
 		return s.CancelErr("error reading response body: %v", err)
 	}
 
-	L.Push(lua.LNumber(resp.StatusCode))
-	L.Push(respHeaderTable)
-	L.Push(lua.LString(string(b)))
-	return 3
+	respTable := &lua.LTable{}
+	respTable.RawSetString("status", lua.LNumber(resp.StatusCode))
+	respTable.RawSetString("headers", respHeaderTable)
+	respTable.RawSetString("body", lua.LString(string(b)))
+	L.Push(respTable)
+	return 1
 }
 
 func (s *State) execute(L *lua.LState) int {

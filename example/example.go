@@ -44,7 +44,7 @@ func BasicAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, pass, ok := r.BasicAuth()
 		if ok {
-			if !checkAuth(user, pass) {
+			if checkAuth(user, pass) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -88,6 +88,6 @@ func CreateThing(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error unmarshalling request: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-
 	fmt.Println("successfully created print statement for payload:", req.Payload)
+	_, _ = w.Write([]byte(req.Payload))
 }

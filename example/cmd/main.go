@@ -9,9 +9,10 @@ import (
 )
 
 func main() {
+	port := "5309"
 	mux := example.MakeMux()
-	fmt.Println("starting server at 5000")
-	err := http.ListenAndServe(":5000", mux)
+	fmt.Println("starting server at", port)
+	err := http.ListenAndServe(":"+port, mux)
 	if err != nil {
 		fmt.Println("error while serving:", err)
 		os.Exit(1)

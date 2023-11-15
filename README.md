@@ -52,7 +52,7 @@ local s = require('sqump')
 
 print('hello from request one!')
 
-local status, headers, resp = s.fetch('http://localhost:5000', {
+local response = s.fetch('http://localhost:5000', {
     method = 'POST',
     timeout = 3,
     headers = {
@@ -64,8 +64,7 @@ local status, headers, resp = s.fetch('http://localhost:5000', {
 })
 
 s.export({
-    status = status,
-    resp = resp
+    status = response.status,
 })
 ```
 The script from Request_Two:
@@ -100,7 +99,7 @@ export(tbl)
     Parameters:
         tbl - a table of data to be made available to subsequent chained scripts
 
-fetch(resource, opts) -> status, headers, body
+fetch(resource, opts) -> response
     Parameters:
         resource - a string HTTP URL
         opts     - a table of options modeled after the Fetch API, with some alterations
@@ -109,7 +108,8 @@ fetch(resource, opts) -> status, headers, body
             headers - a table of strings to use as request headers
             body    - a string to use as the request body
     Returns:
-        status  - a number, the status code of the response
-        headers - a table, the headers of the response
-        body    - a string, the body sent in the response
+        response - a table, holding:
+            status  - a number, the status code of the response
+            headers - a table, the headers of the response
+            body    - a string, the body sent in the response
 ```
