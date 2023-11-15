@@ -1,5 +1,5 @@
 # sqump
-![Tests](https://github.com/EvWilson/sqump/actions/workflows/test.yml/badge.svg?branch=main)
+[![Tests](https://github.com/EvWilson/sqump/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/EvWilson/sqump/actions/workflows/test.yml)
 
 `sqump` is a utility for managing small, composable scripts that perform HTTP requests and operations on the results of these requests.
 It is born out of a dissatisfaction with Postman, and after recent policy changes, an outright aversion.
