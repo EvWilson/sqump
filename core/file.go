@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 const defaultPerms = 0644
@@ -192,7 +193,7 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 	}
 
 	cb := func(b []byte) error {
-		req.Script = string(b)
+		req.Script = strings.TrimSpace(string(b))
 		return s.UpsertRequest(req).Flush()
 	}
 
@@ -232,7 +233,7 @@ func (s *Squmpfile) EditEnv() error {
 
 func (s *Squmpfile) EditTitle() error {
 	cb := func(b []byte) error {
-		s.Title = string(b)
+		s.Title = strings.TrimSpace(string(b))
 		return s.Flush()
 	}
 
