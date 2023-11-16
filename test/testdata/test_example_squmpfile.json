@@ -8,11 +8,42 @@
   "requests": [
     {
       "title": "A",
-      "script": "local s = require('sqump')\n\nlocal resp = s.fetch('http://localhost:5309/getAuth', {\n\ttimeout = 5\n})\n\nassert(resp.status == 200, \"req A status\")\n\ns.export({\n\tstatus = resp.status,\n\theaders = resp.headers,\n\tbody = resp.body\n})"
+      "script": [
+        "local s = require('sqump')",
+        "",
+        "local resp = s.fetch('http://localhost:5309/getAuth', {",
+        "\ttimeout = 5",
+        "})",
+        "",
+        "assert(resp.status == 200, \"req A status\")",
+        "",
+        "s.export({",
+        "\tstatus = resp.status,",
+        "\theaders = resp.headers,",
+        "\tbody = resp.body",
+        "})"
+      ]
     },
     {
       "title": "B",
-      "script": "local s = require('sqump')\n\nlocal a = s.execute('A')\n\nlocal resp = s.fetch('http://localhost:5309/createThing', {\n\tmethod = 'POST',\n\ttimeout = 5,\n\theaders = {\n\t\tAuthorization = 'Basic ' .. a.body,\n\t},\n\tbody = '{\"payload\": \"print this test message\"}'\n})\n\nassert(resp.status == 200, \"req B status\")\n\ns.print_response(resp)"
+      "script": [
+        "local s = require('sqump')",
+        "",
+        "local a = s.execute('A')",
+        "",
+        "local resp = s.fetch('http://localhost:5309/createThing', {",
+        "\tmethod = 'POST',",
+        "\ttimeout = 5,",
+        "\theaders = {",
+        "\t\tAuthorization = 'Basic ' .. a.body,",
+        "\t},",
+        "\tbody = '{\"payload\": \"print this test message\"}'",
+        "})",
+        "",
+        "assert(resp.status == 200, \"req B status\")",
+        "",
+        "s.print_response(resp)"
+      ]
     }
   ],
   "environment": {

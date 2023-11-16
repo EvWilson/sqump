@@ -27,7 +27,7 @@ func main() {
 
 	root := handlers.BuildRoot()
 	err = root.Handle(os.Args[1:])
-	if err != nil {
+	if err != nil && err.Error() != "abort" {
 		root.PrintUsage()
 		fmt.Println("error while handling:", err)
 		os.Exit(1)

@@ -103,16 +103,8 @@ func handleEditSqumpfileEnv(args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("expected 1 arg to `edit env`, got: %d", len(args))
 	}
-	arg := args[0]
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-	if err != nil {
-		return err
-	}
-	err = conf.CheckForRegisteredFile(arg)
-	if err != nil {
-		return err
-	}
-	sq, err := core.ReadSqumpfile(arg)
+	fpath := args[0]
+	sq, err := core.ReadSqumpfile(fpath)
 	if err != nil {
 		return err
 	}
@@ -141,40 +133,10 @@ func handleEditReq(args []string) error {
 	}
 	squmpfileName, requestName := args[0], args[1]
 
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-	if err != nil {
-		return err
-	}
-
-	err = conf.CheckForRegisteredFile(squmpfileName)
-	if err != nil {
-		return err
-	}
 	sq, err := core.ReadSqumpfile(squmpfileName)
 	if err != nil {
 		return err
 	}
-
-	// idx, err := fuzzyfinder.Find(
-	// 	sq.Requests,
-	// 	func(i int) string {
-	// 		return sq.Requests[i].Title
-	// 	},
-	// 	fuzzyfinder.WithPreviewWindow(func(i, width, height int) string {
-	// 		if i < 0 || i >= len(sq.Requests) {
-	// 			return ""
-	// 		}
-	// 		req := sq.Requests[i]
-	// 		return fmt.Sprintf("Title: %s\nScript:\n\n%s\n", req.Title, req.Script)
-	// 	}),
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// err = sq.EditRequest(sq.Requests[idx].Title)
-	// if err != nil {
-	// 	return err
-	// }
 
 	err = sq.EditRequest(requestName)
 	if err != nil {

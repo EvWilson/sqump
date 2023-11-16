@@ -23,13 +23,23 @@ type Squmpfile struct {
 
 type Request struct {
 	Title  string `json:"title"`
-	Script string `json:"script"`
+	Script Script `json:"script"`
+}
+
+type Script []string
+
+func (s Script) String() string {
+	return strings.Join(s, "\n")
+}
+
+func ScriptFromString(s string) Script {
+	return strings.Split(s, "\n")
 }
 
 func NewRequest(title string) *Request {
 	return &Request{
 		Title:  title,
-		Script: "print('hello world!')",
+		Script: Script{"print('hello world!')"},
 	}
 }
 
@@ -73,15 +83,10 @@ func (s SemVer) GreaterThan(other SemVer) bool {
 
 func DefaultSqumpFile() Squmpfile {
 	return Squmpfile{
-		Path:    "Squmpfile.json",
-		Version: CurrentVersion,
-		Title:   "My_New_Squmpfile",
-		Requests: []Request{
-			{
-				Title:  "NewReq",
-				Script: "print('hello, world!')",
-			},
-		},
+		Path:     "Squmpfile.json",
+		Version:  CurrentVersion,
+		Title:    "My_New_Squmpfile",
+		Requests: []Request{*NewRequest("NewReq")},
 		Environment: EnvMap{
 			"staging": {
 				"hello": "world",
@@ -151,7 +156,7 @@ func (s *Squmpfile) ExecuteRequest(conf *Config, reqName string, loopCheck LoopC
 			Path:      s.Path,
 			Squmpfile: s.Title,
 			Request:   reqName,
-		}, req.Script, s.Environment, loopCheck)
+		}, req.Script.String(), s.Environment, loopCheck)
 }
 
 func (s *Squmpfile) GetRequest(req string) (*Request, bool) {
@@ -197,11 +202,11 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 	}
 
 	cb := func(b []byte) error {
-		req.Script = strings.TrimSpace(string(b))
+		req.Script = ScriptFromString(strings.TrimSpace(string(b)))
 		return s.UpsertRequest(req).Flush()
 	}
 
-	b, err := EditBuffer([]byte(req.Script), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName), cb)
+	b, err := EditBuffer([]byte(req.Script.String()), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName), cb)
 	if err != nil {
 		return err
 	}
