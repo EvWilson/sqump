@@ -74,11 +74,17 @@ func (s *State) fetch(L *lua.LState) int {
 		return s.CancelErr("expected resource parameter to be string, instead got: %s", resourceVal.Type().String())
 	}
 	resource := lua.LVAsString(resourceVal)
+
 	optionVal := L.Get(2)
-	if optionVal.Type() != lua.LTTable {
-		return s.CancelErr("expected options parameter to be table, instead got: %s", optionVal.Type().String())
+	var options *lua.LTable
+	switch optionVal.Type() {
+	case lua.LTTable:
+		options = optionVal.(*lua.LTable)
+	case lua.LTNil:
+		options = &lua.LTable{}
+	default:
+		return s.CancelErr("expected options parameter to be table or nil, instead got: %s", optionVal.Type().String())
 	}
-	options := optionVal.(*lua.LTable)
 
 	// Marshal body
 	var buf *bytes.Buffer
