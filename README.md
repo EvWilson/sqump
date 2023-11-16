@@ -118,6 +118,10 @@ print_response(response)
         response - a table, holding the result of `fetch`, to be printed to the console
 ```
 
+## FAQs
+- Sqump?
+[Sqump](https://youtu.be/MS1jJzoMUjI?si=PPH_hONo0wEKNAmx&t=414)
+
 ### Planned Work
 - Finish working on a basic web view for the less CLI-inclined
 - More testing: cover import cycles, improper params
