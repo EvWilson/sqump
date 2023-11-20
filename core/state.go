@@ -127,6 +127,7 @@ func (s *State) fetch(L *lua.LState) int {
 	}
 
 	// Add headers
+	req.Header.Add("User-Agent", "sqump")
 	reqHeaderTable := options.RawGetString("headers")
 	switch reqHeaderTable.Type() {
 	case lua.LTTable:

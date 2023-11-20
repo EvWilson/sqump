@@ -14,6 +14,7 @@ func BuildRoot() *cmder.Root {
 		ExecOperation(),
 		AddOperation(),
 		RemoveOperation(),
+		AutoregisterOperation(),
 		RegisterOperation(),
 		UnregisterOperation(),
 		AddOperation(),

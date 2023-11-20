@@ -93,21 +93,21 @@ func (c *Config) Unregister(path string) error {
 	return fmt.Errorf("no registered squmpfile found for path '%s'", path)
 }
 
-func (c *Config) CheckForRegisteredFile(path string) error {
+func (c *Config) CheckForRegisteredFile(path string) (bool, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return err
+		return false, err
 	}
 	_, err = os.Stat(abs)
 	if err != nil {
-		return err
+		return false, err
 	}
 	for _, fpath := range c.Files {
 		if abs == fpath {
-			return nil
+			return true, nil
 		}
 	}
-	return fmt.Errorf("error: filepath '%s' is not registered", abs)
+	return false, nil
 }
 
 func CreateNewConfigFileAt(path string) (*Config, error) {
