@@ -47,7 +47,7 @@ func AutoregisterOperation() *cmder.Op {
 					return err
 				}
 				if !ok {
-					fmt.Println("registering '%s'\n", squmpfile)
+					fmt.Printf("registering '%s'\n", squmpfile)
 					err = conf.Register(squmpfile)
 					if err != nil {
 						return err
