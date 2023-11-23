@@ -211,6 +211,24 @@ func (s *Squmpfile) UpsertRequest(req *Request) *Squmpfile {
 }
 
 func (s *Squmpfile) EditRequest(reqName string) error {
+	path := s.Path
+
+	cb := func(b []byte) error {
+		sq, err := ReadSqumpfile(path)
+		if err != nil {
+			return err
+		}
+		req, ok := sq.GetRequest(reqName)
+		if !ok {
+			return ErrNotFound{
+				MissingItem: reqName,
+				Location:    sq.Title,
+			}
+		}
+		req.Script = ScriptFromString(strings.TrimSpace(string(b)))
+		return sq.UpsertRequest(req).Flush()
+	}
+
 	req, ok := s.GetRequest(reqName)
 	if !ok {
 		return ErrNotFound{
@@ -218,12 +236,6 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 			Location:    s.Title,
 		}
 	}
-
-	cb := func(b []byte) error {
-		req.Script = ScriptFromString(strings.TrimSpace(string(b)))
-		return s.UpsertRequest(req).Flush()
-	}
-
 	b, err := EditBuffer([]byte(req.Script.String()), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName), cb)
 	if err != nil {
 		return err
@@ -233,15 +245,20 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 }
 
 func (s *Squmpfile) EditEnv() error {
+	path := s.Path
 	cb := func(b []byte) error {
+		sq, err := ReadSqumpfile(path)
+		if err != nil {
+			return err
+		}
 		var e EnvMap
-		err := json.Unmarshal(b, &e)
+		err = json.Unmarshal(b, &e)
 		if err != nil {
 			return err
 		}
 
-		s.Environment = e
-		return s.Flush()
+		sq.Environment = e
+		return sq.Flush()
 	}
 
 	envBytes, err := json.MarshalIndent(s.Environment, "", "  ")
@@ -259,9 +276,18 @@ func (s *Squmpfile) EditEnv() error {
 }
 
 func (s *Squmpfile) EditTitle() error {
+	path := s.Path
 	cb := func(b []byte) error {
-		s.Title = strings.TrimSpace(string(b))
-		return s.Flush()
+		sq, err := ReadSqumpfile(path)
+		if err != nil {
+			return err
+		}
+		titleStr := string(b)
+		if strings.Contains(titleStr, ".") {
+			return fmt.Errorf("Illegal character '.' detected in edit title buffer: '%s'", titleStr)
+		}
+		sq.Title = strings.TrimSpace(titleStr)
+		return sq.Flush()
 	}
 
 	basename := filepath.Base(s.Title)

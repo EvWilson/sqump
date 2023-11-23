@@ -140,26 +140,27 @@ func DefaultConfig(path string) *Config {
 }
 
 func (c *Config) EditEnv() error {
-	envBytes, err := json.MarshalIndent(c.Environment, "", "  ")
-	if err != nil {
-		return err
-	}
-
+	path := c.Path
 	cb := func(b []byte) error {
+		conf, err := ReadConfigFrom(path)
+		if err != nil {
+			return err
+		}
+
 		var e EnvMap
 		err = json.Unmarshal(b, &e)
 		if err != nil {
 			return err
 		}
 
-		c.Environment = e
-		err = c.Flush()
-		if err != nil {
-			return err
-		}
-		return nil
+		conf.Environment = e
+		return conf.Flush()
 	}
 
+	envBytes, err := json.MarshalIndent(c.Environment, "", "  ")
+	if err != nil {
+		return err
+	}
 	b, err := EditBuffer(envBytes, "core-config-*.json", cb)
 	if err != nil {
 		return err
@@ -169,9 +170,14 @@ func (c *Config) EditEnv() error {
 }
 
 func (c *Config) EditCurrentEnv() error {
+	path := c.Path
 	cb := func(b []byte) error {
-		c.CurrentEnv = strings.TrimSpace(string(b))
-		return c.Flush()
+		conf, err := ReadConfigFrom(path)
+		if err != nil {
+			return err
+		}
+		conf.CurrentEnv = strings.TrimSpace(string(b))
+		return conf.Flush()
 	}
 
 	b, err := EditBuffer([]byte(c.CurrentEnv), "core-config-current-env-*.json", cb)

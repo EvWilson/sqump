@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -53,7 +54,9 @@ func EditBuffer(
 		}
 	}
 
-	cmd := exec.Command(editor, f.Name())
+	cmdCtx, cmdCancel := context.WithCancel(context.Background())
+	defer cmdCancel()
+	cmd := exec.CommandContext(cmdCtx, editor, f.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
