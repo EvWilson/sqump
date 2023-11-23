@@ -159,6 +159,24 @@ func (s *Squmpfile) ExecuteRequest(conf *Config, reqName string, loopCheck LoopC
 		}, req.Script.String(), s.Environment, loopCheck)
 }
 
+func (s *Squmpfile) PrepareScript(conf *Config, reqName string) (string, map[string]string, error) {
+	req, ok := s.GetRequest(reqName)
+	if !ok {
+		return "", nil, ErrNotFound{
+			MissingItem: "request",
+			Location:    reqName,
+		}
+	}
+
+	return PrepareScript(
+		conf,
+		Identifier{
+			Path:      s.Path,
+			Squmpfile: s.Title,
+			Request:   reqName,
+		}, req.Script.String(), s.Environment)
+}
+
 func (s *Squmpfile) GetRequest(req string) (*Request, bool) {
 	for _, r := range s.Requests {
 		if r.Title == req {

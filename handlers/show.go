@@ -6,23 +6,25 @@ import (
 
 	"github.com/EvWilson/sqump/core"
 	"github.com/EvWilson/sqump/handlers/cmder"
+
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
-func ExecOperation() *cmder.Op {
+func ShowOperation() *cmder.Op {
 	return cmder.NewOp(
-		"exec",
-		"exec <squmpfile path> <request title>, or none",
-		"Executes the given request, or fuzzy searches for one if no args provided",
-		handleExec,
+		"show",
+		"show <squmpfile path> <request title>, or none",
+		"Shows the given request script with substitutions made, or fuzzy searches for one if no args provided",
+		handleShow,
 	)
 }
 
-func handleExec(args []string) error {
+func handleShow(args []string) error {
+	var script string
 	var err error
 	switch len(args) {
 	case 0:
-		err = handleExecFuzzy()
+		script, err = handleShowFuzzy()
 	case 2:
 		filepath, requestName := args[0], args[1]
 		var sqFile *core.Squmpfile
@@ -35,7 +37,7 @@ func handleExec(args []string) error {
 		if err != nil {
 			return err
 		}
-		_, err = sqFile.ExecuteRequest(conf, requestName, make(core.LoopChecker))
+		script, _, err = sqFile.PrepareScript(conf, requestName)
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
@@ -43,21 +45,23 @@ func handleExec(args []string) error {
 		fmt.Println("error occurred during script execution:")
 		fmt.Print(err)
 	}
+	fmt.Println("Prepared script:")
+	fmt.Println(script)
 	return nil
 }
 
-func handleExecFuzzy() error {
+func handleShowFuzzy() (string, error) {
 	options := make([]string, 0)
 
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	for _, path := range conf.Files {
 		sq, err := core.ReadSqumpfile(path)
 		if err != nil {
-			return err
+			return "", err
 		}
 		for _, req := range sq.Requests {
 			options = append(options, fmt.Sprintf("%s.%s", sq.Title, req.Title))
@@ -71,23 +75,23 @@ func handleExecFuzzy() error {
 		},
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	option := options[idx]
 	pieces := strings.Split(option, ".")
 	if len(pieces) != 2 {
-		return fmt.Errorf("more than a single '.' found in request identifier: '%s'", option)
+		return "", fmt.Errorf("more than a single '.' found in request identifier: '%s'", option)
 	}
 	squmpfileTitle, requestName := pieces[0], pieces[1]
 	sq, err := conf.SqumpfileByTitle(squmpfileTitle)
 	if err != nil {
-		return err
+		return "", err
 	}
-	_, err = sq.ExecuteRequest(conf, requestName, make(core.LoopChecker))
+	script, _, err := sq.PrepareScript(conf, requestName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return script, nil
 }

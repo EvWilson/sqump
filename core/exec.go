@@ -17,6 +17,24 @@ func (i Identifier) String() string {
 	return fmt.Sprintf("%s.%s.%s", i.Path, i.Squmpfile, i.Request)
 }
 
+func PrepareScript(
+	conf *Config,
+	ident Identifier,
+	script string,
+	env EnvMap,
+) (string, map[string]string, error) {
+	mergedEnv, err := getMergedEnv(conf.CurrentEnv, env, conf.Environment)
+	if err != nil {
+		return "", nil, err
+	}
+
+	script, err = replaceEnvTemplates(ident.String(), script, mergedEnv)
+	if err != nil {
+		return "", nil, err
+	}
+	return script, mergedEnv, nil
+}
+
 func ExecuteRequest(
 	conf *Config,
 	ident Identifier,
@@ -24,12 +42,7 @@ func ExecuteRequest(
 	env EnvMap,
 	loopCheck LoopChecker,
 ) (*State, error) {
-	mergedEnv, err := getMergedEnv(conf.CurrentEnv, env, conf.Environment)
-	if err != nil {
-		return nil, err
-	}
-
-	script, err = replaceEnvTemplates(ident.String(), script, mergedEnv)
+	script, mergedEnv, err := PrepareScript(conf, ident, script, env)
 	if err != nil {
 		return nil, err
 	}
