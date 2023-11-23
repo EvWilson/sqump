@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/EvWilson/sqump/example"
+	"github.com/EvWilson/sqump/test/example"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/EvWilson/sqump/core"
-	"github.com/EvWilson/sqump/example"
+	"github.com/EvWilson/sqump/test/example"
 )
 
 func TestExample(t *testing.T) {

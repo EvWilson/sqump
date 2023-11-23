@@ -212,7 +212,6 @@ func (s *Squmpfile) UpsertRequest(req *Request) *Squmpfile {
 
 func (s *Squmpfile) EditRequest(reqName string) error {
 	path := s.Path
-
 	cb := func(b []byte) error {
 		sq, err := ReadSqumpfile(path)
 		if err != nil {
