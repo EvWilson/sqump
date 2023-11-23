@@ -3,7 +3,9 @@ package cmder
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
+	"text/tabwriter"
 )
 
 type ErrNoop struct {
@@ -40,10 +42,26 @@ func NewRoot(
 	description string,
 	writer io.Writer,
 ) *Root {
-	return &Root{
+	r := &Root{
 		description: description,
 		writer:      writer,
 	}
+
+	r.Register(NewOp(
+		"help",
+		"help <optional: top level command>",
+		"Prints a help summary of top level commands, or options tree of command if one given",
+		func(args []string) error {
+			if len(args) == 0 {
+				r.PrintUsage()
+			} else {
+				r.PrintExtendedUsage(args)
+			}
+			return nil
+		},
+	))
+
+	return r
 }
 
 func (r *Root) Register(ops ...*Op) {
@@ -53,21 +71,39 @@ func (r *Root) Register(ops ...*Op) {
 }
 
 func (r *Root) PrintUsage() {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	for _, subOp := range r.ops {
+		_, _ = w.Write([]byte(fmt.Sprintf("%s\t%s\n", subOp.short, subOp.long)))
+	}
+	_ = w.Flush()
+	fmt.Println()
+}
+
+func (r *Root) PrintExtendedUsage(args []string) {
+	if len(args) != 1 {
+		fmt.Printf("expected 1 arg to `help`, got: %d\n", len(args))
+		return
+	}
+	cmdName := args[0]
 	write := func(s string) {
 		_, _ = r.writer.Write([]byte(s))
 	}
 	write(fmt.Sprintf("%s\n\n", r.description))
 	for _, subOp := range r.ops {
-		printOps(r.writer, &subOp, "")
-		write("\n")
+		if subOp.cmdName == cmdName {
+			printOps(r.writer, &subOp, "")
+			write("\n")
+			return
+		}
 	}
+	fmt.Printf("did not find listing for command '%s'\n", cmdName)
 }
 
 func printOps(writer io.Writer, op *Op, offset string) {
 	write := func(s string) {
 		_, _ = writer.Write([]byte(s))
 	}
-	write(fmt.Sprintf("%s%s    %s\n%s---\n", offset, op.short, op.long, offset))
+	write(fmt.Sprintf("%s%s    %s\n", offset, op.short, op.long))
 	for _, subOp := range op.subOps {
 		printOps(writer, &subOp, offset+"    ")
 	}
@@ -77,16 +113,6 @@ func (r *Root) Handle(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("expected at least one argument, got none")
 	}
-
-	r.Register(NewOp(
-		"help",
-		"help",
-		"Prints an extended help menu for all commands",
-		func(_ []string) error {
-			r.PrintUsage()
-			return nil
-		},
-	))
 
 	for _, op := range r.ops {
 		if op.cmdName == args[0] {
