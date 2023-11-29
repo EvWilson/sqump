@@ -108,6 +108,10 @@ func (e ErrNotFound) Is(target error) bool {
 }
 
 func (s *Squmpfile) Flush() error {
+	err := s.validate()
+	if err != nil {
+		return err
+	}
 	b, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err
@@ -281,11 +285,7 @@ func (s *Squmpfile) EditTitle() error {
 		if err != nil {
 			return err
 		}
-		titleStr := string(b)
-		if strings.Contains(titleStr, ".") {
-			return fmt.Errorf("Illegal character '.' detected in edit title buffer: '%s'", titleStr)
-		}
-		sq.Title = strings.TrimSpace(titleStr)
+		sq.Title = strings.TrimSpace(string(b))
 		return sq.Flush()
 	}
 
@@ -296,6 +296,18 @@ func (s *Squmpfile) EditTitle() error {
 	}
 
 	return cb(b)
+}
+
+func (s *Squmpfile) validate() error {
+	if strings.Contains(s.Title, ".") {
+		return fmt.Errorf("Illegal character '.' detected in squmpfile title: '%s'", s.Title)
+	}
+	for _, req := range s.Requests {
+		if strings.Contains(req.Title, ".") {
+			return fmt.Errorf("Illegal character '.' detected in request title: '%s'", req.Title)
+		}
+	}
+	return nil
 }
 
 func (s *Squmpfile) SetEnvVar(env, key, val string) {
