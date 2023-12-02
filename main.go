@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/EvWilson/sqump/cli"
 	"github.com/EvWilson/sqump/core"
-	"github.com/EvWilson/sqump/handlers"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	root := handlers.BuildRoot()
+	root := cli.BuildRoot()
 	err = root.Handle(os.Args[1:])
 	if err != nil && err.Error() != "abort" {
 		root.PrintUsage()

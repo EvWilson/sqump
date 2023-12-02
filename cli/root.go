@@ -1,11 +1,11 @@
-package handlers
+package cli
 
 import (
 	"context"
 	"os"
 
+	"github.com/EvWilson/sqump/cli/cmder"
 	"github.com/EvWilson/sqump/core"
-	"github.com/EvWilson/sqump/handlers/cmder"
 )
 
 func BuildRoot() *cmder.Root {

@@ -1,10 +1,10 @@
-package handlers
+package cli
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/EvWilson/sqump/handlers/cmder"
+	"github.com/EvWilson/sqump/cli/cmder"
 	"github.com/EvWilson/sqump/web"
 )
 

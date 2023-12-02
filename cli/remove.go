@@ -1,12 +1,12 @@
-package handlers
+package cli
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"github.com/EvWilson/sqump/cli/cmder"
 	"github.com/EvWilson/sqump/core"
-	"github.com/EvWilson/sqump/handlers/cmder"
 
 	"github.com/ktr0731/go-fuzzyfinder"
 )

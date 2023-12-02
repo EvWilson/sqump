@@ -1,109 +1,68 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 
 	"github.com/EvWilson/sqump/core"
-	"github.com/EvWilson/sqump/handlers/cmder"
 )
 
-func AutoregisterOperation() *cmder.Op {
-	return cmder.NewOp(
-		"autoregister",
-		"autoregister",
-		"Recursively search for `Squmpfile.json` to register from the current working directory",
-		func(_ context.Context, args []string) error {
-			if len(args) != 0 {
-				return fmt.Errorf("expected 0 arguments to `autoregister`, got: %d", len(args))
-			}
-			cwd, err := os.Getwd()
+func Autoregister(cwd string) error {
+	found := make([]string, 0)
+	err := filepath.Walk(cwd, func(path string, info fs.FileInfo, err error) error {
+		if err == nil && info.Name() == "Squmpfile.json" {
+			abs, err := filepath.Abs(info.Name())
 			if err != nil {
 				return err
 			}
-			found := make([]string, 0)
-			err = filepath.Walk(cwd, func(path string, info fs.FileInfo, err error) error {
-				if err == nil && info.Name() == "Squmpfile.json" {
-					abs, err := filepath.Abs(info.Name())
-					if err != nil {
-						return err
-					}
-					found = append(found, abs)
-				}
-				return nil
-			})
+			found = append(found, abs)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		return err
+	}
+	for _, squmpfile := range found {
+		ok, err := conf.CheckForRegisteredFile(squmpfile)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			fmt.Printf("registering '%s'\n", squmpfile)
+			err = conf.Register(squmpfile)
 			if err != nil {
 				return err
 			}
-			conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-			if err != nil {
-				return err
-			}
-			for _, squmpfile := range found {
-				ok, err := conf.CheckForRegisteredFile(squmpfile)
-				if err != nil {
-					return err
-				}
-				if !ok {
-					fmt.Printf("registering '%s'\n", squmpfile)
-					err = conf.Register(squmpfile)
-					if err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-	)
+		}
+	}
+	return nil
 }
 
-func RegisterOperation() *cmder.Op {
-	return cmder.NewOp(
-		"register",
-		"register <squmpfile path>",
-		"Registers the given squmpfile in your config",
-		func(_ context.Context, args []string) error {
-			if len(args) != 1 {
-				return fmt.Errorf("expected 1 argument to `register`, got: %d", len(args))
-			}
-			path, err := filepath.Abs(args[0])
-			if err != nil {
-				return err
-			}
-
-			conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-			if err != nil {
-				return err
-			}
-
-			return conf.Register(path)
-		},
-	)
+func Register(fpath string) error {
+	path, err := filepath.Abs(fpath)
+	if err != nil {
+		return err
+	}
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		return err
+	}
+	return conf.Register(path)
 }
 
-func UnregisterOperation() *cmder.Op {
-	return cmder.NewOp(
-		"unregister",
-		"unregister <squmpfile path>",
-		"Unregisters the given squmpfile from your config",
-		func(_ context.Context, args []string) error {
-			if len(args) != 1 {
-				return fmt.Errorf("expected 1 argument to `unregister`, got: %d", len(args))
-			}
-			path, err := filepath.Abs(args[0])
-			if err != nil {
-				return err
-			}
-
-			conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-			if err != nil {
-				return err
-			}
-
-			return conf.Unregister(path)
-		},
-	)
+func Unregister(fpath string) error {
+	path, err := filepath.Abs(fpath)
+	if err != nil {
+		return err
+	}
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		return err
+	}
+	return conf.Unregister(path)
 }
