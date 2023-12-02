@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/EvWilson/sqump/core"
@@ -17,7 +18,7 @@ func AddOperation() *cmder.Op {
 			"file",
 			"add file <squmpfile title>",
 			"Create a new squmpfile and register it in your config",
-			func(args []string) error {
+			func(_ context.Context, args []string) error {
 				if len(args) != 1 {
 					return fmt.Errorf("expected 1 arg in `add file`, got: %d", len(args))
 				}
@@ -31,7 +32,7 @@ func AddOperation() *cmder.Op {
 			"req",
 			"add req <squmpfile path> <title>",
 			"Add a new request with the given title to the given squmpfile",
-			func(args []string) error {
+			func(_ context.Context, args []string) error {
 				if len(args) != 2 {
 					return fmt.Errorf("expected 2 args in `add req`, got: %d", len(args))
 				}

@@ -32,7 +32,7 @@ type LoopChecker map[string]bool
 func CreateState(
 	conf *Config,
 	ident Identifier,
-	env map[string]string,
+	env EnvMapValue,
 	loopCheck LoopChecker,
 ) *State {
 	L := lua.NewState()
@@ -200,7 +200,7 @@ func (s *State) execute(L *lua.LState) int {
 	if err != nil {
 		return s.CancelErr("error reading squmpfile at '%s': %v", ident.Path, err)
 	}
-	state, err := sq.ExecuteRequest(s.config, request, s.loopCheck)
+	state, err := sq.ExecuteRequest(s.config, request, s.loopCheck, s.environment)
 	if err != nil {
 		return s.CancelErr("error performing request '%s': %v", request, err)
 	}

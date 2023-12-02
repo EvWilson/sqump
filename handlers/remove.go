@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -15,7 +16,7 @@ func RemoveOperation() *cmder.Op {
 		"remove",
 		"remove",
 		"Removes the selected resource from its parent collection",
-		func(args []string) error {
+		func(_ context.Context, args []string) error {
 			if len(args) != 0 {
 				return fmt.Errorf("expected 0 args to `remove`, got: %d", len(args))
 			}

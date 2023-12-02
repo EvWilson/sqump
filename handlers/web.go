@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/EvWilson/sqump/handlers/cmder"
@@ -12,7 +13,7 @@ func WebOperation() *cmder.Op {
 		"webview",
 		"webview",
 		"Open the web UI for interacting with sqump",
-		func(args []string) error {
+		func(_ context.Context, args []string) error {
 			mux, err := web.NewRouter()
 			if err != nil {
 				return err

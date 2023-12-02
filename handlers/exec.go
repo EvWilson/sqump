@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/EvWilson/sqump/core"
 	"github.com/EvWilson/sqump/handlers/cmder"
+
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
@@ -18,11 +20,15 @@ func ExecOperation() *cmder.Op {
 	)
 }
 
-func handleExec(args []string) error {
+func handleExec(ctx context.Context, args []string) error {
+	overrides := ctx.Value(cmder.OverrideContextKey).(map[string]string)
 	var err error
+	if err != nil {
+		return err
+	}
 	switch len(args) {
 	case 0:
-		err = handleExecFuzzy()
+		err = handleExecFuzzy(overrides)
 	case 2:
 		filepath, requestName := args[0], args[1]
 		var sqFile *core.Squmpfile
@@ -35,7 +41,7 @@ func handleExec(args []string) error {
 		if err != nil {
 			return err
 		}
-		_, err = sqFile.ExecuteRequest(conf, requestName, make(core.LoopChecker))
+		_, err = sqFile.ExecuteRequest(conf, requestName, make(core.LoopChecker), overrides)
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
@@ -46,7 +52,7 @@ func handleExec(args []string) error {
 	return nil
 }
 
-func handleExecFuzzy() error {
+func handleExecFuzzy(overrides core.EnvMapValue) error {
 	options := make([]string, 0)
 
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
@@ -84,7 +90,7 @@ func handleExecFuzzy() error {
 	if err != nil {
 		return err
 	}
-	_, err = sq.ExecuteRequest(conf, requestName, make(core.LoopChecker))
+	_, err = sq.ExecuteRequest(conf, requestName, make(core.LoopChecker), overrides)
 	if err != nil {
 		return err
 	}

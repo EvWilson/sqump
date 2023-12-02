@@ -8,7 +8,9 @@
   "current_env": "staging",
   "environment": {
     "staging": {
-      "test": "this_is_a_test_string"
+      "test": "this_is_a_test_string",
+      "one": "one",
+      "two": "two"
     }
   }
 }

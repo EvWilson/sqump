@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/EvWilson/sqump/core"
@@ -17,7 +18,7 @@ func InfoOperation() *cmder.Op {
 			"core",
 			"info core",
 			"Print basic information about the core configuration",
-			func(args []string) error {
+			func(_ context.Context, args []string) error {
 				conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 				if err != nil {
 					return fmt.Errorf("error reading config: %v", err)
@@ -30,7 +31,7 @@ func InfoOperation() *cmder.Op {
 			"file",
 			"info file <squmpfile path>",
 			"Print basic information about the given squmpfile",
-			func(args []string) error {
+			func(_ context.Context, args []string) error {
 				if len(args) != 1 {
 					return fmt.Errorf("expected 1 argument to `info file`, got: %d", len(args))
 				}

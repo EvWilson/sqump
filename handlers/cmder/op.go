@@ -1,12 +1,18 @@
 package cmder
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"text/tabwriter"
 )
+
+type ContextKey int
+
+const OverrideContextKey ContextKey = iota
 
 type ErrNoop struct {
 	name string
@@ -26,16 +32,17 @@ func (en ErrNoop) Is(other error) bool {
 	return reflect.TypeOf(other) == reflect.TypeOf(ErrNoop{})
 }
 
-func NewNoopHandler(name string) func([]string) error {
-	return func(_ []string) error {
+func NewNoopHandler(name string) func(context.Context, []string) error {
+	return func(_ context.Context, _ []string) error {
 		return NewErrNoop(name)
 	}
 }
 
 type Root struct {
-	description string
-	writer      io.Writer
-	ops         []Op
+	description  string
+	writer       io.Writer
+	ops          []Op
+	envOverrides map[string]string
 }
 
 func NewRoot(
@@ -43,15 +50,17 @@ func NewRoot(
 	writer io.Writer,
 ) *Root {
 	r := &Root{
-		description: description,
-		writer:      writer,
+		description:  description,
+		writer:       writer,
+		ops:          make([]Op, 0),
+		envOverrides: make(map[string]string),
 	}
 
 	r.Register(NewOp(
 		"help",
 		"help <optional: top level command>",
 		"Prints a help summary of top level commands, or options tree of command if one given",
-		func(args []string) error {
+		func(ctx context.Context, args []string) error {
 			if len(args) == 0 {
 				r.PrintUsage()
 			} else {
@@ -114,20 +123,52 @@ func (r *Root) Handle(args []string) error {
 		return fmt.Errorf("expected at least one argument, got none")
 	}
 
+	args, overrides, err := ExtractOverrideMappings(args, "-e")
+	if err != nil {
+		return err
+	}
+
+	ctx := context.WithValue(context.Background(), OverrideContextKey, overrides)
 	for _, op := range r.ops {
 		if op.cmdName == args[0] {
-			return op.Handle(args[1:])
+			return op.Handle(ctx, args[1:])
 		}
 	}
 
 	return fmt.Errorf("did not find handler for subcommand '%s'", args[0])
 }
 
+func ExtractOverrideMappings(startArgs []string, delimiter string) ([]string, map[string]string, error) {
+	args := make([]string, len(startArgs))
+	copy(args, startArgs)
+	mappings := make(map[string]string)
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg != delimiter {
+			continue
+		}
+		if len(args) <= i+1 {
+			args = args[:len(args)-1]
+			break
+		}
+		mapping := args[i+1]
+		pair := strings.Split(mapping, "=")
+		if len(pair) != 2 {
+			return nil, nil, fmt.Errorf("error: '%s' produced invalid map split length '%d'", mapping, len(pair))
+		}
+		k, v := pair[0], pair[1]
+		mappings[k] = v
+		args = append(args[:i], args[i+2:]...)
+		i--
+	}
+	return args, mappings, nil
+}
+
 type Op struct {
 	cmdName string
 	short   string
 	long    string
-	op      func(args []string) error
+	op      func(ctx context.Context, args []string) error
 	subOps  []Op
 }
 
@@ -135,7 +176,7 @@ func NewOp(
 	cmdName,
 	short,
 	long string,
-	op func(args []string) error,
+	op func(ctx context.Context, args []string) error,
 	subOps ...*Op,
 ) *Op {
 	operation := &Op{
@@ -151,14 +192,14 @@ func NewOp(
 	return operation
 }
 
-func (o *Op) Handle(args []string) error {
+func (o *Op) Handle(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return o.op(args)
+		return o.op(ctx, args)
 	}
 	for _, op := range o.subOps {
 		if op.cmdName == args[0] {
-			return op.Handle(args[1:])
+			return op.Handle(ctx, args[1:])
 		}
 	}
-	return o.op(args)
+	return o.op(ctx, args)
 }

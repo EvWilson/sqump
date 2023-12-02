@@ -21,9 +21,10 @@ func PrepareScript(
 	conf *Config,
 	ident Identifier,
 	script string,
-	env EnvMap,
-) (string, map[string]string, error) {
-	mergedEnv, err := getMergedEnv(conf.CurrentEnv, env, conf.Environment)
+	requestEnv EnvMap,
+	overrides EnvMapValue,
+) (string, EnvMapValue, error) {
+	mergedEnv, err := getMergedEnv(conf.CurrentEnv, requestEnv, conf.Environment, overrides)
 	if err != nil {
 		return "", nil, err
 	}
@@ -39,10 +40,11 @@ func ExecuteRequest(
 	conf *Config,
 	ident Identifier,
 	script string,
-	env EnvMap,
+	requestEnv EnvMap,
+	overrides EnvMapValue,
 	loopCheck LoopChecker,
 ) (*State, error) {
-	script, mergedEnv, err := PrepareScript(conf, ident, script, env)
+	script, mergedEnv, err := PrepareScript(conf, ident, script, requestEnv, overrides)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +77,7 @@ func replaceEnvTemplates(ident, script string, env map[string]string) (string, e
 	return buf.String(), nil
 }
 
-func getMergedEnv(current string, squmpEnv, coreEnv EnvMap) (map[string]string, error) {
+func getMergedEnv(current string, squmpEnv, coreEnv EnvMap, overrides EnvMapValue) (EnvMapValue, error) {
 	squmpfileEnv, ok := squmpEnv[current]
 	if !ok {
 		return nil, fmt.Errorf("no matching environment found in squmpfile for name: %s", current)
@@ -85,13 +87,13 @@ func getMergedEnv(current string, squmpEnv, coreEnv EnvMap) (map[string]string, 
 		// Overrides in the core config are optional, so this is not a failure case
 		configEnv = make(map[string]string)
 	}
-	return mergeMaps(squmpfileEnv, configEnv), nil
+	return mergeMaps(squmpfileEnv, configEnv, overrides), nil
 }
 
 // mergeMaps will upsert later map entries into/over earlier map entries
-func mergeMaps(m ...map[string]string) map[string]string {
+func mergeMaps(m ...EnvMapValue) EnvMapValue {
 	if len(m) == 0 {
-		return make(map[string]string)
+		return make(EnvMapValue)
 	}
 
 	res := m[0]

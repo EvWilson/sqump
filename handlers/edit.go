@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -37,7 +38,7 @@ func EditOperation() *cmder.Op {
 	)
 }
 
-func handleGlobalEdit(_ []string) error {
+func handleGlobalEdit(_ context.Context, _ []string) error {
 	options := make([]string, 0)
 
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
@@ -99,7 +100,7 @@ func handleGlobalEdit(_ []string) error {
 	}
 }
 
-func handleEditSqumpfileEnv(args []string) error {
+func handleEditSqumpfileEnv(_ context.Context, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("expected 1 arg to `edit env`, got: %d", len(args))
 	}
@@ -115,7 +116,7 @@ func handleEditSqumpfileEnv(args []string) error {
 	return nil
 }
 
-func handleEditEnvCore(_ []string) error {
+func handleEditEnvCore(_ context.Context, _ []string) error {
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		return err
@@ -127,7 +128,7 @@ func handleEditEnvCore(_ []string) error {
 	return nil
 }
 
-func handleEditReq(args []string) error {
+func handleEditReq(_ context.Context, args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("expected 2 args to `edit req`, got: %d", len(args))
 	}

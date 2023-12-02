@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -19,12 +20,16 @@ func ShowOperation() *cmder.Op {
 	)
 }
 
-func handleShow(args []string) error {
+func handleShow(ctx context.Context, args []string) error {
+	overrides := ctx.Value(cmder.OverrideContextKey).(map[string]string)
 	var script string
 	var err error
+	if err != nil {
+		return err
+	}
 	switch len(args) {
 	case 0:
-		script, err = handleShowFuzzy()
+		script, err = handleShowFuzzy(overrides)
 	case 2:
 		filepath, requestName := args[0], args[1]
 		var sqFile *core.Squmpfile
@@ -37,7 +42,7 @@ func handleShow(args []string) error {
 		if err != nil {
 			return err
 		}
-		script, _, err = sqFile.PrepareScript(conf, requestName)
+		script, _, err = sqFile.PrepareScript(conf, requestName, overrides)
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
@@ -50,7 +55,7 @@ func handleShow(args []string) error {
 	return nil
 }
 
-func handleShowFuzzy() (string, error) {
+func handleShowFuzzy(overrides core.EnvMapValue) (string, error) {
 	options := make([]string, 0)
 
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
@@ -88,7 +93,7 @@ func handleShowFuzzy() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	script, _, err := sq.PrepareScript(conf, requestName)
+	script, _, err := sq.PrepareScript(conf, requestName, overrides)
 	if err != nil {
 		return "", err
 	}

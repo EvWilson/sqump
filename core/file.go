@@ -43,7 +43,9 @@ func NewRequest(title string) *Request {
 	}
 }
 
-type EnvMap map[string]map[string]string
+type EnvMap map[string]EnvMapValue
+
+type EnvMapValue map[string]string
 
 func (e EnvMap) PrintInfo() {
 	fmt.Println("Environment:")
@@ -145,7 +147,12 @@ func WriteDefaultSqumpfile() error {
 	return sf.Flush()
 }
 
-func (s *Squmpfile) ExecuteRequest(conf *Config, reqName string, loopCheck LoopChecker) (*State, error) {
+func (s *Squmpfile) ExecuteRequest(
+	conf *Config,
+	reqName string,
+	loopCheck LoopChecker,
+	overrides EnvMapValue,
+) (*State, error) {
 	req, ok := s.GetRequest(reqName)
 	if !ok {
 		return nil, ErrNotFound{
@@ -160,10 +167,15 @@ func (s *Squmpfile) ExecuteRequest(conf *Config, reqName string, loopCheck LoopC
 			Path:      s.Path,
 			Squmpfile: s.Title,
 			Request:   reqName,
-		}, req.Script.String(), s.Environment, loopCheck)
+		},
+		req.Script.String(),
+		s.Environment,
+		overrides,
+		loopCheck,
+	)
 }
 
-func (s *Squmpfile) PrepareScript(conf *Config, reqName string) (string, map[string]string, error) {
+func (s *Squmpfile) PrepareScript(conf *Config, reqName string, overrides EnvMapValue) (string, map[string]string, error) {
 	req, ok := s.GetRequest(reqName)
 	if !ok {
 		return "", nil, ErrNotFound{
@@ -178,7 +190,11 @@ func (s *Squmpfile) PrepareScript(conf *Config, reqName string) (string, map[str
 			Path:      s.Path,
 			Squmpfile: s.Title,
 			Request:   reqName,
-		}, req.Script.String(), s.Environment)
+		},
+		req.Script.String(),
+		s.Environment,
+		overrides,
+	)
 }
 
 func (s *Squmpfile) GetRequest(req string) (*Request, bool) {

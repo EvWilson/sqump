@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
@@ -15,7 +16,7 @@ func AutoregisterOperation() *cmder.Op {
 		"autoregister",
 		"autoregister",
 		"Recursively search for `Squmpfile.json` to register from the current working directory",
-		func(args []string) error {
+		func(_ context.Context, args []string) error {
 			if len(args) != 0 {
 				return fmt.Errorf("expected 0 arguments to `autoregister`, got: %d", len(args))
 			}
@@ -64,7 +65,7 @@ func RegisterOperation() *cmder.Op {
 		"register",
 		"register <squmpfile path>",
 		"Registers the given squmpfile in your config",
-		func(args []string) error {
+		func(_ context.Context, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("expected 1 argument to `register`, got: %d", len(args))
 			}
@@ -88,7 +89,7 @@ func UnregisterOperation() *cmder.Op {
 		"unregister",
 		"unregister <squmpfile path>",
 		"Unregisters the given squmpfile from your config",
-		func(args []string) error {
+		func(_ context.Context, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("expected 1 argument to `unregister`, got: %d", len(args))
 			}

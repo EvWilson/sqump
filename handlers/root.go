@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"os"
 
 	"github.com/EvWilson/sqump/core"
@@ -23,7 +24,7 @@ func BuildRoot() *cmder.Root {
 			"init",
 			"init",
 			"Create a new default squmpfile in the current directory",
-			func(args []string) error {
+			func(_ context.Context, args []string) error {
 				return core.WriteDefaultSqumpfile()
 			},
 		),

@@ -10,20 +10,6 @@ import (
 )
 
 func TestExample(t *testing.T) {
-	configPath := "testdata/test_example_config.json"
-	filePath := "testdata/test_example_squmpfile.json"
-
-	beginningConfig, err := core.ReadConfigFrom(configPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		err = beginningConfig.Flush()
-		if err != nil {
-			t.Fatal("error cleaning up:", err)
-		}
-	})
-
 	mux := example.MakeMux()
 	go func() {
 		err := http.ListenAndServe(":5309", mux)
@@ -32,44 +18,82 @@ func TestExample(t *testing.T) {
 		}
 	}()
 
+	setup := func(t *testing.T, confPath, filePath string) (*Tmpfile, *Tmpfile) {
+		tmpConf, err := CreateTmpfile(confPath)
+		assert(t, err == nil, "create conf")
+		tmpFile, err := CreateTmpfile(filePath)
+		assert(t, err == nil, "create file")
+		t.Cleanup(func() {
+			_ = tmpConf.Cleanup()
+			assert(t, err == nil, "cleanup conf")
+			_ = tmpFile.Cleanup()
+			assert(t, err == nil, "cleanup file")
+		})
+		return tmpConf, tmpFile
+	}
+
 	t.Run("Basic", func(t *testing.T) {
-		conf, err := core.ReadConfigFrom(configPath)
+		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
+
+		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = conf.Register(filePath)
+		err = conf.Register(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		sq, err := core.ReadSqumpfile(filePath)
+		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = sq.ExecuteRequest(conf, "A", make(core.LoopChecker))
+		_, err = sq.ExecuteRequest(conf, "A", make(core.LoopChecker), make(core.EnvMapValue))
 		if err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("Chained, gets result", func(t *testing.T) {
-		conf, err := core.ReadConfigFrom(configPath)
+		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
+		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = conf.Register(filePath)
+		err = conf.Register(tmpFile.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = sq.ExecuteRequest(conf, "B", make(core.LoopChecker), make(core.EnvMapValue))
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("Multiple override sets and sources", func(t *testing.T) {
+		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_multi_env_squmpfile.json")
+		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = conf.Register(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		sq, err := core.ReadSqumpfile(filePath)
+		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		state, err := sq.ExecuteRequest(conf, "B", make(core.LoopChecker))
+		_, err = sq.ExecuteRequest(conf, "A", make(core.LoopChecker), core.EnvMapValue{
+			"two": "2",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Log(state)
 	})
 }

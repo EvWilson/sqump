@@ -1,0 +1,20 @@
+{
+  "version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "title": "A_Multi_Env_Squmpfile",
+  "requests": [
+    {
+      "title": "A",
+      "script": [
+        "assert(\"{{.one}}\" == \"one\", \"A 1\")",
+        "assert(\"{{.two}}\" == \"2\", \"A 2\")"
+      ]
+    }
+  ],
+  "environment": {
+    "staging": {}
+  }
+}
