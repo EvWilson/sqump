@@ -113,6 +113,13 @@ fetch(resource, opts) -> response
             headers - a table, the headers of the response
             body    - a string, the body sent in the response
 
+drill_json(query, json) -> result
+    Parameters:
+        query - a period-separated string identifying a location in the given JSON
+        json  - a JSON string
+    Returns:
+        result - either a found basic Lua value, or a JSON string of a map or array if a basic type wasn't found by the query
+
 print_response(response)
     Parameters:
         response - a table, holding the result of `fetch`, to be printed to the console

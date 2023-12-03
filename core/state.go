@@ -328,29 +328,9 @@ func (s *State) drillJSON(L *lua.LState) int {
 			return s.CancelErr("error: drill_json: found unexpected type value '%v' for '%v'", reflect.TypeOf(resolved), resolved)
 		}
 	}
-	// TODO: returning heavily nested values from drill will bork this. Disallow, or support? Leaning disallow
 	switch resolved := v.(type) {
-	case map[string]any:
-		retTable := &lua.LTable{}
-		for k, v := range resolved {
-			lVal, err := anyToLValue(v)
-			if err != nil {
-				return s.CancelErr("error: drill_json: while converting map return to Lua value: %v", err)
-			}
-			retTable.RawSetString(k, lVal)
-		}
-		L.Push(retTable)
-		return 1
-	case []any:
-		retTable := &lua.LTable{}
-		for _, val := range resolved {
-			lVal, err := anyToLValue(val)
-			if err != nil {
-				return s.CancelErr("error: drill_json: while converting array return to Lua value: %v", err)
-			}
-			retTable.Append(lVal)
-		}
-		L.Push(retTable)
+	case map[string]any, []any:
+		L.Push(lua.LString(fmt.Sprintf("%v", resolved)))
 		return 1
 	case bool, string, float64, int, nil:
 		lVal, err := anyToLValue(resolved)
