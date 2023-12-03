@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
@@ -58,6 +60,7 @@ func CreateState(
 			"export":         state.export,
 			"fetch":          state.fetch,
 			"print_response": state.printResponse,
+			"drill_json":     state.drillJSON,
 		})
 		L.Push(mod)
 		return 1
@@ -71,7 +74,7 @@ func (s *State) fetch(L *lua.LState) int {
 	// Get params
 	resourceVal := L.Get(1)
 	if resourceVal.Type() != lua.LTString {
-		return s.CancelErr("expected resource parameter to be string, instead got: %s", resourceVal.Type().String())
+		return s.CancelErr("error: fetch: expected resource parameter to be string, instead got: %s", resourceVal.Type().String())
 	}
 	resource := lua.LVAsString(resourceVal)
 
@@ -83,7 +86,7 @@ func (s *State) fetch(L *lua.LState) int {
 	case lua.LTNil:
 		options = &lua.LTable{}
 	default:
-		return s.CancelErr("expected options parameter to be table or nil, instead got: %s", optionVal.Type().String())
+		return s.CancelErr("error: fetch: expected options parameter to be table or nil, instead got: %s", optionVal.Type().String())
 	}
 
 	// Marshal body
@@ -95,26 +98,26 @@ func (s *State) fetch(L *lua.LState) int {
 		body.(*lua.LTable).ForEach(func(k, v lua.LValue) {
 			keyString, err := luaTypeToString(k)
 			if err != nil {
-				_ = s.CancelErr("error parsing body key '%v': %v", k, err)
+				_ = s.CancelErr("error: fetch: while parsing body key '%v': %v", k, err)
 				return
 			}
 			bodyMap[keyString] = v
 		})
 		b, err := json.Marshal(bodyMap)
 		if err != nil {
-			return s.CancelErr("error marshaling body table in fetch: %v", err)
+			return s.CancelErr("error: fetch: while marshaling body table in fetch: %v", err)
 		}
 		buf = bytes.NewBuffer(b)
 	case lua.LTString:
 		str, err := luaTypeToString(body)
 		if err != nil {
-			return s.CancelErr("error converting body string in fetch: %v", err)
+			return s.CancelErr("error: fetch: while converting body string in fetch: %v", err)
 		}
 		buf = bytes.NewBuffer([]byte(str))
 	case lua.LTNil:
 		buf = bytes.NewBuffer([]byte{})
 	default:
-		return s.CancelErr("unsupported body type for fetch: %s. expected: table, string, or nil", body.Type().String())
+		return s.CancelErr("error: fetch: unsupported body type: %s. expected: table, string, or nil", body.Type().String())
 	}
 
 	// Get other option items
@@ -123,7 +126,7 @@ func (s *State) fetch(L *lua.LState) int {
 
 	req, err := http.NewRequest(method, resource, buf)
 	if err != nil {
-		return s.CancelErr("error creating request: %v", err)
+		return s.CancelErr("error: fetch: while creating request: %v", err)
 	}
 
 	// Add headers
@@ -134,12 +137,12 @@ func (s *State) fetch(L *lua.LState) int {
 		reqHeaderTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
 			keyString, err := luaTypeToString(k)
 			if err != nil {
-				_ = s.CancelErr("error parsing header key '%s': %v", k, err)
+				_ = s.CancelErr("error: fetch: while parsing header key '%s': %v", k, err)
 				return
 			}
 			valString, err := luaTypeToString(v)
 			if err != nil {
-				_ = s.CancelErr("error parsing header value '%s': %v", v, err)
+				_ = s.CancelErr("error: fetch: while parsing header value '%s': %v", v, err)
 				return
 			}
 			req.Header.Add(keyString, valString)
@@ -147,7 +150,7 @@ func (s *State) fetch(L *lua.LState) int {
 	case lua.LTNil:
 		// this is fine, default to doing nothing
 	default:
-		return s.CancelErr("unexpected value found for header table slot. value: %v", reqHeaderTable.Type())
+		return s.CancelErr("error: fetch: unexpected value found for header table slot. value: %v", reqHeaderTable.Type())
 	}
 
 	// Perform request
@@ -155,7 +158,7 @@ func (s *State) fetch(L *lua.LState) int {
 		Timeout: time.Second * time.Duration(timeout),
 	}).Do(req)
 	if err != nil {
-		return s.CancelErr("error performing request: %v", err)
+		return s.CancelErr("error: fetch: while performing request: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -163,7 +166,7 @@ func (s *State) fetch(L *lua.LState) int {
 	respHeaderTable := &lua.LTable{}
 	for k, v := range resp.Header {
 		if len(v) != 1 {
-			return s.CancelErr("response header value '%v' had unexpected length: %d", v, len(v))
+			return s.CancelErr("error: fetch: response header value '%v' had unexpected length: %d", v, len(v))
 		}
 		respHeaderTable.RawSetString(k, lua.LString(v[0]))
 	}
@@ -171,7 +174,7 @@ func (s *State) fetch(L *lua.LState) int {
 	// Read response
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return s.CancelErr("error reading response body: %v", err)
+		return s.CancelErr("error: fetch: while reading response body: %v", err)
 	}
 
 	respTable := &lua.LTable{}
@@ -185,7 +188,7 @@ func (s *State) fetch(L *lua.LState) int {
 func (s *State) execute(L *lua.LState) int {
 	requestVal := L.Get(1)
 	if requestVal.Type() != lua.LTString {
-		return s.CancelErr("error: expected request parameter to be string, instead got: %s", requestVal.Type().String())
+		return s.CancelErr("error: execute: expected request parameter to be string, instead got: %s", requestVal.Type().String())
 	}
 	request := lua.LVAsString(requestVal)
 
@@ -193,16 +196,16 @@ func (s *State) execute(L *lua.LState) int {
 	ident.Request = request
 
 	if _, ok := s.loopCheck[ident.String()]; ok {
-		return s.CancelErr("error: possible cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
+		return s.CancelErr("error: execute: cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
 	}
 
 	sq, err := ReadSqumpfile(ident.Path)
 	if err != nil {
-		return s.CancelErr("error reading squmpfile at '%s': %v", ident.Path, err)
+		return s.CancelErr("error: execute: while reading squmpfile at '%s': %v", ident.Path, err)
 	}
 	state, err := sq.ExecuteRequest(s.config, request, s.loopCheck, s.environment)
 	if err != nil {
-		return s.CancelErr("error performing request '%s': %v", request, err)
+		return s.CancelErr("error: execute: while performing request '%s': %v", request, err)
 	}
 
 	export, ok := state.exports[ident.String()]
@@ -217,7 +220,7 @@ func (s *State) execute(L *lua.LState) int {
 func (s *State) export(L *lua.LState) int {
 	ctxVal := L.Get(1)
 	if ctxVal.Type() != lua.LTTable {
-		return s.CancelErr("expected context parameter to be table, instead got: %s", ctxVal.Type().String())
+		return s.CancelErr("error: export: expected context parameter to be table, instead got: %s", ctxVal.Type().String())
 	}
 	ctx := ctxVal.(*lua.LTable)
 	s.exports[s.currentIdent.String()] = ctx
@@ -228,7 +231,7 @@ func (s *State) export(L *lua.LState) int {
 func (s *State) printResponse(L *lua.LState) int {
 	respVal := L.Get(1)
 	if respVal.Type() != lua.LTTable {
-		return s.CancelErr("expected response parameter to be table, instead got: %s", respVal.Type().String())
+		return s.CancelErr("error: print_response: expected response parameter to be table, instead got: %s", respVal.Type().String())
 	}
 	resp := respVal.(*lua.LTable)
 
@@ -270,6 +273,95 @@ func (s *State) printResponse(L *lua.LState) int {
 	fmt.Printf("\nBody:\n%s\n", body)
 
 	return 0
+}
+
+func (s *State) drillJSON(L *lua.LState) int {
+	queryVal := L.Get(1)
+	if queryVal.Type() != lua.LTString {
+		return s.CancelErr("error: drill_json: expected query parameter to be string, instead got: %s", queryVal.Type().String())
+	}
+	query := lua.LVAsString(queryVal)
+	jsonVal := L.Get(2)
+	if jsonVal.Type() != lua.LTString {
+		return s.CancelErr("error: drill_json: expected json parameter to be string, instead got: %s", jsonVal.Type().String())
+	}
+	data := lua.LVAsString(jsonVal)
+
+	var v any
+	err := json.Unmarshal([]byte(data), &v)
+	if err != nil {
+		return s.CancelErr("error: drill_json: while unmarshalling '%s': %v", data, err)
+	}
+
+	pieces := strings.Split(query, ".")
+	for i, piece := range pieces {
+		if piece == "" {
+			return s.CancelErr("error: drill_json: got blank field in query '%s'", query)
+		}
+		switch resolved := v.(type) {
+		case map[string]any:
+			val, ok := resolved[piece]
+			if !ok {
+				return s.CancelErr("error: drill_json: no field '%s' found in object: %v", piece, resolved)
+			}
+			v = val
+		case []any:
+			idx, err := strconv.Atoi(piece)
+			if err != nil {
+				return s.CancelErr("error: drill_json: query section '%s' could not be converted to array index for JSON array '%v' due to: %v", piece, resolved, err)
+			}
+			if idx < 1 {
+				return s.CancelErr("error: drill_json: query index '%d' less than 1, thus not valid", idx)
+			}
+			v = resolved[idx-1]
+		case bool, string, float64, int, nil:
+			if i != len(pieces)-1 {
+				return s.CancelErr("error: drill_json: end value '%v' encountered before end of query '%s'", v, query)
+			}
+			lVal, err := anyToLValue(resolved)
+			if err != nil {
+				return s.CancelErr("error: drill_json: while converting discrete value to Lua value: %v", err)
+			}
+			L.Push(lVal)
+			return 1
+		default:
+			return s.CancelErr("error: drill_json: found unexpected type value '%v' for '%v'", reflect.TypeOf(resolved), resolved)
+		}
+	}
+	// TODO: returning heavily nested values from drill will bork this. Disallow, or support? Leaning disallow
+	switch resolved := v.(type) {
+	case map[string]any:
+		retTable := &lua.LTable{}
+		for k, v := range resolved {
+			lVal, err := anyToLValue(v)
+			if err != nil {
+				return s.CancelErr("error: drill_json: while converting map return to Lua value: %v", err)
+			}
+			retTable.RawSetString(k, lVal)
+		}
+		L.Push(retTable)
+		return 1
+	case []any:
+		retTable := &lua.LTable{}
+		for _, val := range resolved {
+			lVal, err := anyToLValue(val)
+			if err != nil {
+				return s.CancelErr("error: drill_json: while converting array return to Lua value: %v", err)
+			}
+			retTable.Append(lVal)
+		}
+		L.Push(retTable)
+		return 1
+	case bool, string, float64, int, nil:
+		lVal, err := anyToLValue(resolved)
+		if err != nil {
+			return s.CancelErr("error: drill_json: while converting discrete value to Lua value: %v", err)
+		}
+		L.Push(lVal)
+		return 1
+	default:
+		return s.CancelErr("error: drill_json: encountered unexpected data type post-loop: %v", reflect.TypeOf(v))
+	}
 }
 
 func (s *State) CancelErr(format string, args ...any) int {
@@ -358,4 +450,21 @@ func getMapFromTable(table *lua.LTable, key string) (map[string]string, error) {
 		return nil, fmt.Errorf("unexpected value found for header table slot. value: %v", innerTable.Type())
 	}
 	return ret, nil
+}
+
+func anyToLValue(arg any) (lua.LValue, error) {
+	switch resolved := arg.(type) {
+	case string:
+		return lua.LString(resolved), nil
+	case float64:
+		return lua.LNumber(resolved), nil
+	case int:
+		return lua.LNumber(resolved), nil
+	case bool:
+		return lua.LBool(resolved), nil
+	case nil:
+		return lua.LNil, nil
+	default:
+		return lua.LNil, fmt.Errorf("no compatible Lua value found for '%v' of type '%v'", arg, reflect.TypeOf(arg))
+	}
 }

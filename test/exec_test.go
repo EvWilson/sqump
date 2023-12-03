@@ -60,10 +60,6 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = conf.Register(tmpFile.F.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
 		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
@@ -80,11 +76,6 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = conf.Register(tmpFile.F.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
@@ -92,6 +83,22 @@ func TestExample(t *testing.T) {
 		_, err = sq.ExecuteRequest(conf, "A", make(core.LoopChecker), core.EnvMapValue{
 			"two": "2",
 		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("Test JSON drilling", func(t *testing.T) {
+		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
+		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = sq.ExecuteRequest(conf, "C", make(core.LoopChecker), make(core.EnvMapValue))
 		if err != nil {
 			t.Fatal(err)
 		}
