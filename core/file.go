@@ -48,15 +48,15 @@ type EnvMap map[string]EnvMapValue
 type EnvMapValue map[string]string
 
 func (e EnvMap) PrintInfo() {
-	fmt.Println("Environment:")
+	Println("Environment:")
 	if len(e) == 0 {
-		fmt.Println("  <none>")
+		Println("  <none>")
 		return
 	}
 	for env, vars := range e {
-		fmt.Printf("  %s\n", env)
+		Printf("  %s\n", env)
 		for k, v := range vars {
-			fmt.Printf("    %s: %s\n", k, v)
+			Printf("    %s: %s\n", k, v)
 		}
 	}
 }
@@ -344,11 +344,11 @@ func (s *Squmpfile) PrintInfo() {
 		return s
 	}
 
-	fmt.Println("Title:", strOrNone(s.Title))
-	fmt.Println("Version:", strOrNone(s.Version.String()))
-	fmt.Println("Requests:")
+	Println("Title:", strOrNone(s.Title))
+	Println("Version:", strOrNone(s.Version.String()))
+	Println("Requests:")
 	for _, req := range s.Requests {
-		fmt.Printf("  %s\n", strOrNone(req.Title))
+		Printf("  %s\n", strOrNone(req.Title))
 	}
 	s.Environment.PrintInfo()
 }

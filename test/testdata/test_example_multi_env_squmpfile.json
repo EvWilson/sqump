@@ -9,12 +9,15 @@
     {
       "title": "A",
       "script": [
+        "assert(\"{{.zero}}\" == \"0\", \"A 0\")",
         "assert(\"{{.one}}\" == \"one\", \"A 1\")",
         "assert(\"{{.two}}\" == \"2\", \"A 2\")"
       ]
     }
   ],
   "environment": {
-    "staging": {}
+    "staging": {
+      "zero": "0"
+    }
   }
 }

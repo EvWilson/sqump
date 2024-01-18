@@ -1,0 +1,29 @@
+{{define "title"}}Request{{end}}
+{{define "main"}}
+<h3>Request {{.Title}}</h3>
+
+<a href="/">Home</a>
+<br />
+<a href="/collection/{{.EscapedPath}}">&lt;&lt; Back</a>
+
+<div>
+	Edit
+	<textarea id="edit">
+		{{.EditText}}
+	</textarea>
+</div>
+
+<div>
+	Environment
+	<textarea id="environment">
+		{{.EnvironmentText}}
+	</textarea>
+</div>
+
+<div>
+	Execution Results
+	<textarea id="exec">
+		{{.ExecText}}
+	</textarea>
+</div>
+{{end}}

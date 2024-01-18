@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/EvWilson/sqump/core"
@@ -10,6 +11,8 @@ import (
 )
 
 func TestExample(t *testing.T) {
+	core.SetWriter(os.Stdout)
+
 	mux := example.MakeMux()
 	go func() {
 		err := http.ListenAndServe(":5309", mux)

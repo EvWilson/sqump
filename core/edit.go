@@ -29,14 +29,14 @@ func EditBuffer(
 	defer func(file *os.File) {
 		err = file.Close()
 		if err != nil {
-			fmt.Printf("error closing file '%s': %v\n", file.Name(), err)
+			Printf("error closing file '%s': %v\n", file.Name(), err)
 			return
 		}
 	}(f)
 	defer func(filename string) {
 		err = os.Remove(filename)
 		if err != nil {
-			fmt.Printf("error removing tmpfile '%s': %v\n", filename, err)
+			Printf("error removing tmpfile '%s': %v\n", filename, err)
 			return
 		}
 	}(f.Name())

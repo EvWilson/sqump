@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	core.SetWriter(os.Stdout)
 	// Get config
 	_, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if errors.Is(err, core.ErrNotFound{}) {

@@ -23,3 +23,11 @@ func PrintFileInfo(fpath string) error {
 	sq.PrintInfo()
 	return nil
 }
+
+func ListCollections() ([]string, error) {
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		return nil, err
+	}
+	return conf.Files, nil
+}

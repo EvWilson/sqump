@@ -1,0 +1,19 @@
+{{define "title"}}Collection{{end}}
+{{define "main"}}
+<h3>{{.Title}}</h3>
+
+<a href="/">&lt;&lt; Back</a>
+
+<ul>
+	{{range .Requests}}
+	<li><a href="/collection/{{$.EscapedPath}}/request/{{.Title}}">{{.Title}}</a></li>
+	{{end}}
+</ul>
+
+<div>
+	Environment
+	<textarea id="environment">
+		{{.EnvironmentText}}
+	</textarea>
+</div>
+{{end}}

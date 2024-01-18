@@ -265,12 +265,12 @@ func (s *State) printResponse(L *lua.LState) int {
 		body = buf.String()
 	}
 
-	fmt.Printf("Status Code: %d\n\n", code)
-	fmt.Println("Headers:")
+	Printf("Status Code: %d\n\n", code)
+	Println("Headers:")
 	for k, v := range headers {
-		fmt.Printf("%s: %s\n", k, v)
+		Printf("%s: %s\n", k, v)
 	}
-	fmt.Printf("\nBody:\n%s\n", body)
+	Printf("\nBody:\n%s\n", body)
 
 	return 0
 }

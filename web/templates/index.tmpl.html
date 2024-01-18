@@ -1,0 +1,14 @@
+{{define "base"}}
+<!doctype html>
+<html>
+	<head>
+		<meta charset='utf-8'>
+		<title>{{template "title" .}} - Sqump</title>
+		<link rel="stylesheet" href="/main.css">
+	</head>
+	<body>
+		<h1>Sqump</h1>
+		{{template "main" .}}
+	</body>
+</html>
+{{end}}

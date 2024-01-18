@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/EvWilson/sqump/cli/cmder"
@@ -18,6 +19,7 @@ func WebOperation() *cmder.Op {
 			if err != nil {
 				return err
 			}
+			fmt.Println("starting web server at 5309")
 			err = http.ListenAndServe(":5309", mux)
 			if err != nil {
 				return err

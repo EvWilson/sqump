@@ -1,0 +1,15 @@
+{{define "title"}}Home{{end}}
+{{define "main"}}
+<h3>Collections</h3>
+<ul>
+	{{range .Files}}
+	{{$ep := .EscapedPath}}
+	<li><a href="/collection/{{$ep}}">{{.Title}}</a></li>
+	<ul>
+		{{range .Requests}}
+		<li><a href="/collection/{{$ep}}/request/{{.Title}}">{{.Title}}</a></li>
+		{{end}}
+	</ul>
+	{{end}}
+</ul>
+{{end}}

@@ -209,15 +209,15 @@ func (c *Config) PrintInfo() {
 		return s
 	}
 
-	fmt.Println("Current Env:", strOrNone(c.CurrentEnv))
-	fmt.Println("Version:", strOrNone(c.Version.String()))
-	fmt.Println("Files:")
+	Println("Current Env:", strOrNone(c.CurrentEnv))
+	Println("Version:", strOrNone(c.Version.String()))
+	Println("Files:")
 	if len(c.Files) == 0 {
-		fmt.Println("  <none>")
+		Println("  <none>")
 		return
 	}
 	for _, fpath := range c.Files {
-		fmt.Printf("  %s\n", fpath)
+		Printf("  %s\n", fpath)
 	}
 	c.Environment.PrintInfo()
 }
