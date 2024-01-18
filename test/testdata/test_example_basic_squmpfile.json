@@ -11,7 +11,7 @@
       "script": [
         "local s = require('sqump')",
         "",
-        "local resp = s.fetch('http://localhost:5309/getAuth', {",
+        "local resp = s.fetch('http://localhost:5310/getAuth', {",
         "\ttimeout = 5",
         "})",
         "",
@@ -31,7 +31,7 @@
         "",
         "local a = s.execute('A')",
         "",
-        "local resp = s.fetch('http://localhost:5309/createThing', {",
+        "local resp = s.fetch('http://localhost:5310/createThing', {",
         "\tmethod = 'POST',",
         "\ttimeout = 5,",
         "\theaders = {",

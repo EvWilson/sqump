@@ -2,18 +2,24 @@
 {{define "main"}}
 <h3>{{.Title}}</h3>
 
-<a href="/">&lt;&lt; Back</a>
+<a href="/">&lt;&lt; Home</a>
 
-<ul>
-	{{range .Requests}}
-	<li><a href="/collection/{{$.EscapedPath}}/request/{{.Title}}">{{.Title}}</a></li>
-	{{end}}
-</ul>
+<div class="flex-container">
+	<div class="flex-smaller">
+		<h3>Requests</h3>
+		<ul>
+			{{range .Requests}}
+			<li><a href="/collection/{{$.EscapedPath}}/request/{{.Title}}">{{.Title}}</a></li>
+			{{end}}
+		</ul>
+	</div>
 
-<div>
-	Environment
-	<textarea id="environment">
-		{{.EnvironmentText}}
-	</textarea>
+	<div class="flex-smaller">
+		<h3>Environment</h3>
+		<form action="/collection/{{.EscapedPath}}/config" method="POST">
+			<textarea class="half" name="config">{{.EnvironmentText}}</textarea>
+			<input type="submit" value="Save">
+		</form>
+	</div>
 </div>
 {{end}}

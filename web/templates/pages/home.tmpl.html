@@ -1,15 +1,26 @@
 {{define "title"}}Home{{end}}
 {{define "main"}}
-<h3>Collections</h3>
-<ul>
-	{{range .Files}}
-	{{$ep := .EscapedPath}}
-	<li><a href="/collection/{{$ep}}">{{.Title}}</a></li>
-	<ul>
-		{{range .Requests}}
-		<li><a href="/collection/{{$ep}}/request/{{.Title}}">{{.Title}}</a></li>
-		{{end}}
-	</ul>
-	{{end}}
-</ul>
+<div class="flex-container">
+	<div class="flex-bigger">
+		<h3>Collections</h3>
+		<ul>
+			{{range .Files}}
+			{{$ep := .EscapedPath}}
+			<li><a href="/collection/{{$ep}}">{{.Title}}</a></li>
+			<ul>
+				{{range .Requests}}
+				<li><a href="/collection/{{$ep}}/request/{{.Title}}">{{.Title}}</a></li>
+				{{end}}
+			</ul>
+			{{end}}
+		</ul>
+	</div>
+	<div class="flex-smaller">
+		<h3>Base Environment</h3>
+		<form action="/config" method="POST">
+			<textarea class="half" name="config">{{.BaseEnvironmentText}}</textarea>
+			<input type="submit" value="Save">
+		</form>
+	</div>
+</div>
 {{end}}

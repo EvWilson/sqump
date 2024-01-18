@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	port := "5309"
+	port := "5310"
 	mux := example.MakeMux()
 	fmt.Println("starting server at", port)
 	err := http.ListenAndServe(":"+port, mux)

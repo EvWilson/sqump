@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	core.SetWriter(os.Stdout)
+	core.SetPrinter(&core.StandardPrinter{})
 	// Get config
 	_, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if errors.Is(err, core.ErrNotFound{}) {

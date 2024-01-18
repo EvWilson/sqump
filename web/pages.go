@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -13,6 +14,16 @@ import (
 )
 
 func (r *Router) home(w http.ResponseWriter, _ *http.Request) {
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	envBytes, err := json.MarshalIndent(conf.Environment, "", "  ")
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
 	files, err := handlers.ListCollections()
 	if err != nil {
 		r.ServerError(w, err)
@@ -37,9 +48,11 @@ func (r *Router) home(w http.ResponseWriter, _ *http.Request) {
 		})
 	}
 	r.Render(w, 200, "home.tmpl.html", struct {
-		Files []fileInfo
+		BaseEnvironmentText string
+		Files               []fileInfo
 	}{
-		Files: info,
+		BaseEnvironmentText: string(envBytes),
+		Files:               info,
 	})
 }
 
@@ -53,15 +66,20 @@ func (r *Router) collection(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
+	envBytes, err := json.MarshalIndent(sq.Environment, "", "  ")
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
 	r.Render(w, 200, "collection.tmpl.html", struct {
 		Title           string
 		EscapedPath     string
-		EnvironmentText core.EnvMap
+		EnvironmentText string
 		Requests        []core.Request
 	}{
 		Title:           sq.Title,
 		EscapedPath:     url.PathEscape(path),
-		EnvironmentText: sq.Environment,
+		EnvironmentText: string(envBytes),
 		Requests:        sq.Requests,
 	})
 }
@@ -80,6 +98,11 @@ func (r *Router) request(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
+	envBytes, err := json.MarshalIndent(sq.Environment, "", "  ")
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
 	request, ok := sq.GetRequest(title)
 	if !ok {
 		r.ServerError(w, fmt.Errorf("no request '%s' found in squmpfile '%s'", title, sq.Title))
@@ -89,13 +112,13 @@ func (r *Router) request(w http.ResponseWriter, req *http.Request) {
 		EscapedPath     string
 		Title           string
 		EditText        string
-		EnvironmentText core.EnvMap
+		EnvironmentText string
 		ExecText        string
 	}{
 		EscapedPath:     url.PathEscape(path),
 		Title:           title,
 		EditText:        request.Script.String(),
-		EnvironmentText: sq.Environment,
+		EnvironmentText: string(envBytes),
 		ExecText:        "",
 	})
 }

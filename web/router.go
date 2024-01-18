@@ -35,8 +35,11 @@ func NewRouter() (*Router, error) {
 		templates: tc,
 	}
 	mux.Get("/", r.home)
+	mux.Post("/config", r.handleBaseConfig)
+	mux.Get("/ws", r.handleSocketConnection)
 	mux.Route("/collection/{path}", func(mux chi.Router) {
 		mux.Get("/", r.collection)
+		mux.Post("/config", r.handleCollectionConfig)
 		mux.Get("/request/{title}", r.request)
 	})
 	mux.Get("/*", http.FileServer(http.Dir("./web/assets")).ServeHTTP)

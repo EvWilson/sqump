@@ -5,10 +5,40 @@
 }
 
 body {
-	background-color: var(--bg-color);
-	color: var(--text-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 a {
-	color: var(--text-color);
+  color: var(--text-color);
+}
+
+textarea {
+  width: calc(100% - 10px);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+textarea.half {
+  height: 50vh;
+}
+
+textarea.third {
+  height: 30vh;
+}
+
+.flex-container {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.flex-bigger {
+  flex: 2;
+}
+
+.flex-smaller {
+  flex: 1;
 }
