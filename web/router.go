@@ -42,18 +42,19 @@ func NewRouter() (*Router, error) {
 	mux.Get("/", r.showHome)
 	mux.Post("/config", r.handleBaseConfig)
 	mux.Get("/ws", r.handleSocketConnection)
-	mux.Route("/collection", func(mux chi.Router) {
-		mux.Post("/new", r.createCollection)
-		mux.Get("/unregister/{path}", r.unregisterCollection)
-		mux.Route("/{path}", func(mux chi.Router) {
-			mux.Get("/", r.showCollection)
-			mux.Post("/config", r.handleCollectionConfig)
-			mux.Route("/request", func(mux chi.Router) {
-				mux.Post("/create/new", r.createRequest)
-				mux.Get("/{title}", r.showRequest)
-				mux.Post("/{title}/edit-script", r.updateRequestScript)
-				mux.Get("/{title}/delete", r.deleteRequest)
-			})
+	mux.Post("/autoregister", r.performAutoregister)
+	mux.Post("/collection/create/new", r.createCollection)
+	mux.Route("/collection/{path}", func(mux chi.Router) {
+		mux.Get("/", r.showCollection)
+		mux.Post("/config", r.handleCollectionConfig)
+		mux.Get("/unregister", r.showUnregisterCollection)
+		mux.Post("/unregister", r.performUnregisterCollection)
+		mux.Route("/request", func(mux chi.Router) {
+			mux.Post("/create/new", r.createRequest)
+			mux.Get("/{title}", r.showRequest)
+			mux.Post("/{title}/edit-script", r.updateRequestScript)
+			mux.Get("/{title}/delete", r.showDeleteRequest)
+			mux.Post("/{title}/delete", r.performDeleteRequest)
 		})
 	})
 	mux.Get("/*", http.FileServer(http.Dir("./web/assets")).ServeHTTP)

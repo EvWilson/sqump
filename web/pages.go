@@ -125,6 +125,51 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	sq, err := core.ReadSqumpfile("/" + path)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	r.Render(w, 200, "unregister.tmpl.html", struct {
+		EscapedPath string
+		Title       string
+	}{
+		EscapedPath: url.PathEscape(path),
+		Title:       sq.Title,
+	})
+}
+
+func (r *Router) showDeleteRequest(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	title, ok := getParamEscaped(r, w, req, "title")
+	if !ok {
+		return
+	}
+	sq, err := core.ReadSqumpfile("/" + path)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	r.Render(w, 200, "deleteRequest.tmpl.html", struct {
+		EscapedPath     string
+		CollectionTitle string
+		RequestTitle    string
+		Previous        string
+	}{
+		EscapedPath:     url.PathEscape(path),
+		CollectionTitle: sq.Title,
+		RequestTitle:    title,
+	})
+}
+
 func getParamEscaped(r *Router, w http.ResponseWriter, req *http.Request, key string) (string, bool) {
 	param := chi.URLParam(req, key)
 	if param == "" {

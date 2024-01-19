@@ -6,7 +6,7 @@
 		<ul>
 			{{range .Files}}
 			{{$ep := .EscapedPath}}
-			<li><a href="/collection/{{$ep}}">{{.Title}}</a><span class="fade"> - <a class="fade" href="/collection/unregister/{{$ep}}">Unregister</a></span></li>
+			<li><a href="/collection/{{$ep}}">{{.Title}}</a><span class="fade"> - <a class="fade" href="/collection/{{$ep}}/unregister">Unregister</a></span></li>
 			<ul>
 				{{range .Requests}}
 				<li><a href="/collection/{{$ep}}/request/{{.Title}}">{{.Title}}</a></li>
@@ -14,11 +14,14 @@
 			</ul>
 			{{end}}
 		</ul>
-		<form action="/collection/new" method="POST">
+		<form action="/collection/create/new" method="POST">
 			<span>Create new collection:</span>
 			<input type="text" name="title" />
 			<input type="submit" value="Submit" />
 		</form>
+		<div>
+			<button id="autoregister">Autoregister</button>
+		</div>
 	</div>
 	<div class="flex-smaller">
 		<h3>Base Environment</h3>
@@ -28,4 +31,14 @@
 		</form>
 	</div>
 </div>
+
+<script>
+const autoregister = async () => {
+	await fetch("/autoregister", {
+		method: "POST"
+	})
+	location.href = "/"
+}
+document.getElementById("autoregister").addEventListener("click", autoregister);
+</script>
 {{end}}

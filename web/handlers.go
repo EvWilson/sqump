@@ -3,7 +3,10 @@ package web
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 
 	"github.com/EvWilson/sqump/core"
@@ -32,7 +35,7 @@ func (r *Router) handleBaseConfig(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request) {
@@ -41,6 +44,12 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 		r.ServerError(w, err)
 		return
 	}
+	titleSlice, ok := req.Form["title"]
+	if !ok {
+		r.RequestError(w, errors.New("save request config form does not contain field 'title'"))
+		return
+	}
+	title := strings.Join(titleSlice, "\n")
 	envMap, err := configMap(req)
 	if err != nil {
 		r.ServerError(w, err)
@@ -61,7 +70,7 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
 }
 
 func (r *Router) createCollection(w http.ResponseWriter, req *http.Request) {
@@ -75,15 +84,16 @@ func (r *Router) createCollection(w http.ResponseWriter, req *http.Request) {
 		r.RequestError(w, errors.New("create collection form does not contain field 'title'"))
 		return
 	}
-	err = handlers.AddFile(strings.Join(reqTitle, "\n"))
+	title := strings.Join(reqTitle, "\n")
+	err = handlers.AddFile(title)
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
-func (r *Router) unregisterCollection(w http.ResponseWriter, req *http.Request) {
+func (r *Router) performUnregisterCollection(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
 		return
@@ -93,7 +103,7 @@ func (r *Router) unregisterCollection(w http.ResponseWriter, req *http.Request) 
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func (r *Router) createRequest(w http.ResponseWriter, req *http.Request) {
@@ -111,12 +121,13 @@ func (r *Router) createRequest(w http.ResponseWriter, req *http.Request) {
 		r.RequestError(w, errors.New("create request form does not contain field 'title'"))
 		return
 	}
-	err = handlers.AddRequest("/"+path, strings.Join(reqTitle, "\n"))
+	title := strings.Join(reqTitle, "\n")
+	err = handlers.AddRequest("/"+path, title)
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
 }
 
 func (r *Router) updateRequestScript(w http.ResponseWriter, req *http.Request) {
@@ -143,10 +154,10 @@ func (r *Router) updateRequestScript(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
 }
 
-func (r *Router) deleteRequest(w http.ResponseWriter, req *http.Request) {
+func (r *Router) performDeleteRequest(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
 		return
@@ -160,7 +171,21 @@ func (r *Router) deleteRequest(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/collection/%s", url.PathEscape(path)), http.StatusFound)
+}
+
+func (r *Router) performAutoregister(w http.ResponseWriter, req *http.Request) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	err = handlers.Autoregister(cwd)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func configMap(req *http.Request) (core.EnvMap, error) {

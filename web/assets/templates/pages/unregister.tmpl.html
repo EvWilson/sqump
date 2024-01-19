@@ -1,0 +1,21 @@
+{{define "title"}}Unregister{{end}}
+{{define "main"}}
+<div class="flex-container flex-column">
+	<div class="flex-smaller"><a href="/">&lt;&lt; Home</a></div>
+	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}">&lt;&lt; Back to Collection</a></div>
+</div>
+
+<h3>Unregister {{.Title}}?</h3>
+
+<form action="/collection/{{.EscapedPath}}/unregister" method="POST">
+	<input type="submit" value="Yep!" />
+	<button onclick="cancel(event)">Cancel</button>
+</form>
+
+<script>
+const cancel = (event) => {
+	event.preventDefault()
+	location.href = '/';
+}
+</script>
+{{end}}

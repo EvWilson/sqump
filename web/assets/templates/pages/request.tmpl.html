@@ -1,11 +1,11 @@
 {{define "title"}}Request{{end}}
 {{define "main"}}
-<h3>{{.CollectionTitle}} - {{.Title}}</h3>
-
 <div class="flex-container flex-column">
 	<div class="flex-smaller"><a href="/">&lt;&lt; Home</a></div>
 	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}">&lt;&lt; Back to Collection</a></div>
 </div>
+
+<h3>{{.CollectionTitle}} - {{.Title}}</h3>
 
 <div class="flex-container">
 	<div class="flex-bigger">
@@ -21,6 +21,7 @@
 		<h3>Environment</h3>
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
 			<textarea class="half" name="config" id="request-script">{{.EnvironmentText}}</textarea>
+			<input type="hidden" name="title" value="{{.Title}}" />
 			<input type="submit" value="Save">
 		</form>
 	</div>

@@ -1,8 +1,8 @@
 {{define "title"}}Collection{{end}}
 {{define "main"}}
-<h3>{{.Title}}</h3>
-
 <a href="/">&lt;&lt; Home</a>
+
+<h3>{{.Title}}</h3>
 
 <div class="flex-container">
 	<div class="flex-smaller">
@@ -12,7 +12,7 @@
 			<li><a href="/collection/{{$.EscapedPath}}/request/{{.Title}}">{{.Title}}</a><span class="fade"> - <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Title}}/delete">Delete</a></span></li>
 			{{end}}
 		</ul>
-		<form action="/collection/{{.EscapedPath}}/request/new" method="POST">
+		<form action="/collection/{{.EscapedPath}}/request/create/new" method="POST">
 			<span>Create new request:</span>
 			<input type="text" name="title" />
 			<input type="submit" value="Submit" />
