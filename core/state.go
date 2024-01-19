@@ -65,6 +65,7 @@ func CreateState(
 		L.Push(mod)
 		return 1
 	})
+	L.SetGlobal("print", L.NewFunction(printViaCore))
 
 	return &state
 }
@@ -342,6 +343,16 @@ func (s *State) drillJSON(L *lua.LState) int {
 	default:
 		return s.CancelErr("error: drill_json: encountered unexpected data type post-loop: %v", reflect.TypeOf(v))
 	}
+}
+
+func printViaCore(L *lua.LState) int {
+	top := L.GetTop()
+	args := make([]interface{}, 0, top)
+	for i := 1; i <= top; i++ {
+		args = append(args, L.ToStringMeta(L.Get(i)).String())
+	}
+	Println(args...)
+	return 0
 }
 
 func (s *State) CancelErr(format string, args ...any) int {
