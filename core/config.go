@@ -54,12 +54,22 @@ func ReadConfigFrom(path string) (*Config, error) {
 }
 
 func (c *Config) Flush() error {
+	if err := c.validate(); err != nil {
+		return err
+	}
 	b, err := json.MarshalIndent(&c, "", "  ")
 	if err != nil {
 		return err
 	}
 	err = os.WriteFile(c.Path, b, defaultPerms)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Config) validate() error {
+	if err := c.Environment.validate(); err != nil {
 		return err
 	}
 	return nil

@@ -45,7 +45,30 @@ func NewRequest(title string) *Request {
 
 type EnvMap map[string]EnvMapValue
 
+func (em EnvMap) validate() error {
+	for k, v := range em {
+		if strings.Contains(k, "-") {
+			return fmt.Errorf("cannot accept map key '%s' with '-' character", k)
+		}
+		if err := v.validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type EnvMapValue map[string]string
+
+func (emv EnvMapValue) validate() error {
+	for k, v := range emv {
+		if strings.Contains(k, "-") {
+			return fmt.Errorf("cannot accept submap key '%s' with '-' character", k)
+		} else if strings.Contains(v, "-") {
+			return fmt.Errorf("cannot accept submap value '%s' with '-' character", v)
+		}
+	}
+	return nil
+}
 
 func (e EnvMap) PrintInfo() {
 	Println("Environment:")
@@ -315,12 +338,21 @@ func (s *Squmpfile) EditTitle() error {
 }
 
 func (s *Squmpfile) validate() error {
+	if err := s.Environment.validate(); err != nil {
+		return err
+	}
 	if strings.Contains(s.Title, ".") {
 		return fmt.Errorf("Illegal character '.' detected in squmpfile title: '%s'", s.Title)
 	}
+	reqTitles := make(map[string]bool, len(s.Requests))
 	for _, req := range s.Requests {
 		if strings.Contains(req.Title, ".") {
 			return fmt.Errorf("Illegal character '.' detected in request title: '%s'", req.Title)
+		}
+		if _, ok := reqTitles[req.Title]; ok {
+			return fmt.Errorf("duplicate request title '%s'", req.Title)
+		} else {
+			reqTitles[req.Title] = true
 		}
 	}
 	return nil

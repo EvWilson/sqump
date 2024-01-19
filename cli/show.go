@@ -28,10 +28,22 @@ func handleShow(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		return handlers.Show(filepath, requestName, overrides)
+		prepared, err := handlers.GetPreparedScript(filepath, requestName, overrides)
+		if err != nil {
+			return err
+		}
+		core.Println("Prepared script:")
+		core.Println(prepared)
+		return nil
 	case 2:
 		filepath, requestName := args[0], args[1]
-		return handlers.Show(filepath, requestName, overrides)
+		prepared, err := handlers.GetPreparedScript(filepath, requestName, overrides)
+		if err != nil {
+			return err
+		}
+		core.Println("Prepared script:")
+		core.Println(prepared)
+		return nil
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}

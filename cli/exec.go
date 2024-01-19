@@ -36,8 +36,8 @@ func handleExec(ctx context.Context, args []string) error {
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
 	if err != nil {
-		fmt.Println("error occurred during script execution:")
-		fmt.Print(err)
+		core.Println("error occurred during script execution:")
+		core.Println(err)
 	}
 	return nil
 }

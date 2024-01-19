@@ -3,7 +3,6 @@ package test
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/EvWilson/sqump/core"
@@ -11,11 +10,11 @@ import (
 )
 
 func TestExample(t *testing.T) {
-	core.SetWriter(os.Stdout)
+	core.SetPrinter(&core.StandardPrinter{})
 
 	mux := example.MakeMux()
 	go func() {
-		err := http.ListenAndServe(":5309", mux)
+		err := http.ListenAndServe(":5310", mux)
 		if err != nil {
 			fmt.Println("error from mux termination:", err)
 		}

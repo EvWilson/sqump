@@ -10,6 +10,13 @@ func AddFile(title string) error {
 	return sq.Flush()
 }
 
+func AddFileAtPath(title string, path string) error {
+	sq := core.DefaultSqumpFile()
+	sq.Title = title
+	sq.Path = path
+	return sq.Flush()
+}
+
 func AddRequest(fpath, requestName string) error {
 	sq, err := core.ReadSqumpfile(fpath)
 	if err != nil {

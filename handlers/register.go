@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"io/fs"
 	"path/filepath"
 
@@ -33,7 +32,7 @@ func Autoregister(cwd string) error {
 			return err
 		}
 		if !ok {
-			fmt.Printf("registering '%s'\n", squmpfile)
+			core.Printf("registering '%s'\n", squmpfile)
 			err = conf.Register(squmpfile)
 			if err != nil {
 				return err

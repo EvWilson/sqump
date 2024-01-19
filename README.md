@@ -129,8 +129,3 @@ print_response(response)
 - Sqump?
 
 [Sqump](https://youtu.be/MS1jJzoMUjI?si=PPH_hONo0wEKNAmx&t=414)
-
-### Planned Work
-- Finish working on a basic web view for the less CLI-inclined
-- More testing: cover import cycles, improper params
-- Someday, as necessary, automated config migration

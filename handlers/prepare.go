@@ -6,20 +6,18 @@ import (
 	"github.com/EvWilson/sqump/core"
 )
 
-func Show(fpath, requestName string, overrides core.EnvMapValue) error {
+func GetPreparedScript(fpath, requestName string, overrides core.EnvMapValue) (string, error) {
 	sqFile, err := core.ReadSqumpfile(fpath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
-		return err
+		return "", err
 	}
 	script, _, err := sqFile.PrepareScript(conf, requestName, overrides)
 	if err != nil {
-		return fmt.Errorf("error occurred during script preparation: %v", err)
+		return "", fmt.Errorf("error occurred during script preparation: %v", err)
 	}
-	fmt.Println("Prepared script:")
-	fmt.Println(script)
-	return nil
+	return script, nil
 }

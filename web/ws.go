@@ -2,12 +2,14 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 
 	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/handlers"
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
@@ -93,6 +95,12 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 		for {
 			msg, _, err := wsutil.ReadClientData(conn)
 			if err != nil {
+				var ce wsutil.ClosedError
+				if errors.As(err, &ce) {
+					if ce.Code == ws.StatusNoStatusRcvd || ce.Code == ws.StatusGoingAway {
+						return
+					}
+				}
 				r.ServerError(w, err)
 				return
 			}
@@ -127,16 +135,11 @@ func handleViewCommand(conn net.Conn, payload json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-	if err != nil {
-		return err
-	}
 	path, err := url.PathUnescape(data.EscapedPath)
 	if err != nil {
 		return err
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
-	prepared, _, err := sq.PrepareScript(conf, data.Title, nil)
+	prepared, err := handlers.GetPreparedScript("/"+path, data.Title, nil)
 	if err != nil {
 		return err
 	}
@@ -162,16 +165,11 @@ func handleExecCommand(conn net.Conn, payload json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-	if err != nil {
-		return err
-	}
 	path, err := url.PathUnescape(data.EscapedPath)
 	if err != nil {
 		return err
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
-	_, err = sq.ExecuteRequest(conf, data.Title, make(core.LoopChecker), nil)
+	err = handlers.ExecuteRequest("/"+path, data.Title, nil)
 	if err != nil {
 		return err
 	}
