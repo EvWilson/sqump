@@ -1,6 +1,6 @@
 {{define "title"}}Request{{end}}
 {{define "main"}}
-<h3>Request {{.Title}}</h3>
+<h3>{{.CollectionTitle}} - {{.Title}}</h3>
 
 <div class="flex-container flex-column">
 	<div class="flex-smaller"><a href="/">&lt;&lt; Home</a></div>
@@ -10,7 +10,7 @@
 <div class="flex-container">
 	<div class="flex-bigger">
 		<h3>Edit</h3>
-		<form action="/collection/{{.EscapedPath}}/request/{{.Title}}" method="POST">
+		<form action="/collection/{{.EscapedPath}}/request/{{.Title}}/edit-script" method="POST">
 			<textarea class="half" name="edit">{{.EditText}}</textarea>
 			<input type="submit" value="Save">
 			<button type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Title}}')">Execute</button>

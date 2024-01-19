@@ -9,9 +9,14 @@
 		<h3>Requests</h3>
 		<ul>
 			{{range .Requests}}
-			<li><a href="/collection/{{$.EscapedPath}}/request/{{.Title}}">{{.Title}}</a></li>
+			<li><a href="/collection/{{$.EscapedPath}}/request/{{.Title}}">{{.Title}}</a><span class="fade"> - <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Title}}/delete">Delete</a></span></li>
 			{{end}}
 		</ul>
+		<form action="/collection/{{.EscapedPath}}/request/new" method="POST">
+			<span>Create new request:</span>
+			<input type="text" name="title" />
+			<input type="submit" value="Submit" />
+		</form>
 	</div>
 
 	<div class="flex-smaller">

@@ -64,6 +64,9 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 				return 0, err
 			}
 			err = wsutil.WriteServerMessage(conn, ws.OpText, b)
+			if err != nil {
+				r.l.Error("error writing server message from Printf", "error", err)
+			}
 			return -1, err
 		},
 		func(args ...any) (int, error) {
@@ -79,6 +82,9 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 				return 0, err
 			}
 			err = wsutil.WriteServerMessage(conn, ws.OpText, b)
+			if err != nil {
+				r.l.Error("error writing server message from Println", "error", err)
+			}
 			return -1, err
 		},
 	))
@@ -110,6 +116,7 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 				r.ServerError(w, err)
 				return
 			}
+			r.l.Debug("received message", "command", cmd)
 			switch cmd.Command {
 			case "view":
 				err = handleViewCommand(conn, cmd.Payload)

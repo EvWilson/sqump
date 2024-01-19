@@ -1,6 +1,11 @@
 package handlers
 
-import "github.com/EvWilson/sqump/core"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/EvWilson/sqump/core"
+)
 
 func EditSqumpfileEnv(fpath string) error {
 	sq, err := core.ReadSqumpfile(fpath)
@@ -20,6 +25,19 @@ func EditRequest(fpath, requestName string) error {
 		return err
 	}
 	return nil
+}
+
+func UpdateRequestScript(fpath, requestTitle string, newScript []string) error {
+	sq, err := core.ReadSqumpfile(fpath)
+	if err != nil {
+		return err
+	}
+	req, ok := sq.GetRequest(requestTitle)
+	if !ok {
+		return fmt.Errorf("no request '%s' found in collection '%s'", requestTitle, sq.Title)
+	}
+	req.Script = core.ScriptFromString(strings.Join(newScript, "\n"))
+	return sq.UpsertRequest(req).Flush()
 }
 
 func EditConfigEnv(fpath string) error {

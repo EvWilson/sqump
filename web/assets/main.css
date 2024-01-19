@@ -2,6 +2,7 @@
   --bg-color: #262626;
   --border-color: #f6f6f6;
   --text-color: white;
+  --fade-text-color: #a1a1a1;
 }
 
 body {
@@ -41,4 +42,8 @@ textarea.third {
 
 .flex-smaller {
   flex: 1;
+}
+
+.fade {
+  color: var(--fade-text-color);
 }

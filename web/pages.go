@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (r *Router) home(w http.ResponseWriter, _ *http.Request) {
+func (r *Router) showHome(w http.ResponseWriter, _ *http.Request) {
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		r.ServerError(w, err)
@@ -56,7 +56,7 @@ func (r *Router) home(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
-func (r *Router) collection(w http.ResponseWriter, req *http.Request) {
+func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
 		return
@@ -84,7 +84,7 @@ func (r *Router) collection(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-func (r *Router) request(w http.ResponseWriter, req *http.Request) {
+func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
 		return
@@ -110,12 +110,14 @@ func (r *Router) request(w http.ResponseWriter, req *http.Request) {
 	}
 	r.Render(w, 200, "request.tmpl.html", struct {
 		EscapedPath     string
+		CollectionTitle string
 		Title           string
 		EditText        string
 		EnvironmentText string
 		ExecText        string
 	}{
 		EscapedPath:     url.PathEscape(path),
+		CollectionTitle: sq.Title,
 		Title:           title,
 		EditText:        request.Script.String(),
 		EnvironmentText: string(envBytes),

@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"runtime/debug"
+	"strings"
 
 	"github.com/EvWilson/sqump/web/log"
 
@@ -15,12 +17,14 @@ import (
 type Router struct {
 	*chi.Mux
 	l         log.Logger
+	logLevel  slog.Level
 	templates TemplateCache
 }
 
 func NewRouter() (*Router, error) {
 	mux := chi.NewMux()
-	l := log.NewLogger(slog.LevelInfo)
+	logLevel := slogLevellFromEnv()
+	l := log.NewLogger(logLevel)
 	mux.Use(
 		middleware.Recoverer,
 		LoggingMiddleware(l),
@@ -32,15 +36,25 @@ func NewRouter() (*Router, error) {
 	r := &Router{
 		Mux:       mux,
 		l:         l,
+		logLevel:  logLevel,
 		templates: tc,
 	}
-	mux.Get("/", r.home)
+	mux.Get("/", r.showHome)
 	mux.Post("/config", r.handleBaseConfig)
 	mux.Get("/ws", r.handleSocketConnection)
-	mux.Route("/collection/{path}", func(mux chi.Router) {
-		mux.Get("/", r.collection)
-		mux.Post("/config", r.handleCollectionConfig)
-		mux.Get("/request/{title}", r.request)
+	mux.Route("/collection", func(mux chi.Router) {
+		mux.Post("/new", r.createCollection)
+		mux.Get("/unregister/{path}", r.unregisterCollection)
+		mux.Route("/{path}", func(mux chi.Router) {
+			mux.Get("/", r.showCollection)
+			mux.Post("/config", r.handleCollectionConfig)
+			mux.Route("/request", func(mux chi.Router) {
+				mux.Post("/create/new", r.createRequest)
+				mux.Get("/{title}", r.showRequest)
+				mux.Post("/{title}/edit-script", r.updateRequestScript)
+				mux.Get("/{title}/delete", r.deleteRequest)
+			})
+		})
 	})
 	mux.Get("/*", http.FileServer(http.Dir("./web/assets")).ServeHTTP)
 	return r, nil
@@ -60,7 +74,11 @@ func (r *Router) Render(w http.ResponseWriter, status int, page string, data any
 }
 
 func (r *Router) ServerError(w http.ResponseWriter, err error) {
-	r.l.Error(err.Error(), "stack", string(debug.Stack()))
+	if r.logLevel < slog.LevelInfo {
+		r.l.Error(err.Error(), "stack", string(debug.Stack()))
+	} else {
+		r.l.Error(err.Error())
+	}
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
@@ -75,5 +93,21 @@ func LoggingMiddleware(l log.Logger) func(http.Handler) http.Handler {
 			l.Debug("incoming request", "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.RequestURI())
 			next.ServeHTTP(w, r)
 		})
+	}
+}
+
+func slogLevellFromEnv() slog.Level {
+	level := strings.ToLower(os.Getenv("LOG_LEVEL"))
+	switch level {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
 	}
 }
