@@ -1,13 +1,16 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
+	"runtime"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/EvWilson/sqump/web/log"
 	"github.com/EvWilson/sqump/web/middleware"
@@ -82,10 +85,13 @@ func (r *Router) Render(w http.ResponseWriter, status int, page string, data any
 }
 
 func (r *Router) ServerError(w http.ResponseWriter, err error) {
+	var pcs [1]uintptr
+	_ = runtime.Callers(2, pcs[:])
+	rec := slog.NewRecord(time.Now(), slog.LevelError, err.Error(), pcs[0])
 	if r.logLevel < slog.LevelInfo {
-		r.l.Error(err.Error(), "stack", string(debug.Stack()))
+		r.l.With("error", err).Handler().Handle(context.Background(), rec)
 	} else {
-		r.l.Error(err.Error())
+		r.l.With("error", err).Handler().Handle(context.Background(), rec)
 	}
 	setErrorCookie(w, fmt.Sprintf("Server error: %v", err))
 	Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
