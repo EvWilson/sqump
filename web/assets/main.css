@@ -3,6 +3,8 @@
   --border-color: #f6f6f6;
   --text-color: white;
   --fade-text-color: #a1a1a1;
+  --error-border: #e60000;
+  --error-bg: #800000;
 }
 
 body {
@@ -18,6 +20,13 @@ textarea {
   width: calc(100% - 10px);
   background-color: var(--bg-color);
   color: var(--text-color);
+}
+
+.error-flash {
+  border-style: solid;
+  border-color: var(--error-border);
+  background-color: var(--error-bg);
+  padding: 5px;
 }
 
 .half {

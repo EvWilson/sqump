@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (r *Router) showHome(w http.ResponseWriter, _ *http.Request) {
+func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
 	if err != nil {
 		r.ServerError(w, err)
@@ -50,9 +50,11 @@ func (r *Router) showHome(w http.ResponseWriter, _ *http.Request) {
 	r.Render(w, 200, "home.tmpl.html", struct {
 		BaseEnvironmentText string
 		Files               []fileInfo
+		Error               string
 	}{
 		BaseEnvironmentText: string(envBytes),
 		Files:               info,
+		Error:               GetError(w, req),
 	})
 }
 
@@ -76,11 +78,13 @@ func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 		EscapedPath     string
 		EnvironmentText string
 		Requests        []core.Request
+		Error           string
 	}{
 		Title:           sq.Title,
 		EscapedPath:     url.PathEscape(path),
 		EnvironmentText: string(envBytes),
 		Requests:        sq.Requests,
+		Error:           GetError(w, req),
 	})
 }
 
@@ -130,6 +134,7 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		EnvironmentText string
 		ExecText        string
 		EnvScope        string
+		Error           string
 	}{
 		EscapedPath:     url.PathEscape(path),
 		CollectionTitle: sq.Title,
@@ -138,6 +143,7 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		EnvironmentText: string(envBytes),
 		ExecText:        "",
 		EnvScope:        scope,
+		Error:           GetError(w, req),
 	})
 }
 

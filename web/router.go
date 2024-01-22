@@ -10,9 +10,10 @@ import (
 	"strings"
 
 	"github.com/EvWilson/sqump/web/log"
+	"github.com/EvWilson/sqump/web/middleware"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 type Router struct {
@@ -27,8 +28,9 @@ func NewRouter() (*Router, error) {
 	logLevel := slogLevellFromEnv()
 	l := log.NewLogger(logLevel)
 	mux.Use(
-		middleware.Recoverer,
-		LoggingMiddleware(l),
+		chiMiddleware.Recoverer,
+		middleware.LoggingMiddleware(l),
+		middleware.ErrorHandler,
 	)
 	tc, err := NewTemplateCache()
 	if err != nil {
@@ -72,11 +74,11 @@ func (r *Router) Render(w http.ResponseWriter, status int, page string, data any
 		r.ServerError(w, fmt.Errorf("could not find template of name: %s", page))
 		return
 	}
-	w.WriteHeader(status)
 	err := ts.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		r.ServerError(w, err)
 	}
+	w.WriteHeader(status)
 }
 
 func (r *Router) ServerError(w http.ResponseWriter, err error) {
@@ -85,20 +87,45 @@ func (r *Router) ServerError(w http.ResponseWriter, err error) {
 	} else {
 		r.l.Error(err.Error())
 	}
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	setErrorCookie(w, fmt.Sprintf("Server error: %v", err))
+	Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
 func (r *Router) RequestError(w http.ResponseWriter, err error) {
 	r.l.Error(err.Error(), "stack", string(debug.Stack()))
-	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	setErrorCookie(w, fmt.Sprintf("Request error: %v", err))
+	Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 }
 
-func LoggingMiddleware(l log.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			l.Debug("incoming request", "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.RequestURI())
-			next.ServeHTTP(w, r)
+func setErrorCookie(w http.ResponseWriter, err string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "error",
+		Value:    err,
+		Path:     "/",
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func Error(w http.ResponseWriter, error string, code int) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(code)
+}
+
+func GetError(w http.ResponseWriter, req *http.Request) string {
+	cookie, err := req.Cookie("error")
+	if err == nil {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "error",
+			Value:    "",
+			MaxAge:   -1,
+			Secure:   false,
+			SameSite: http.SameSiteStrictMode,
 		})
+		return cookie.Value
+	} else {
+		return ""
 	}
 }
 
