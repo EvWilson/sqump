@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -57,7 +58,11 @@ func NewRouter() (*Router, error) {
 			mux.Post("/{title}/delete", r.performDeleteRequest)
 		})
 	})
-	mux.Get("/*", http.FileServer(http.Dir("./web/assets")).ServeHTTP)
+	subAssets, err := fs.Sub(assets, "assets")
+	if err != nil {
+		return nil, err
+	}
+	mux.Get("/*", http.FileServer(http.FS(subAssets)).ServeHTTP)
 	return r, nil
 }
 

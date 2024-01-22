@@ -1,7 +1,7 @@
 package web
 
 import (
-	"path/filepath"
+	"fmt"
 	"text/template"
 )
 
@@ -9,21 +9,20 @@ type TemplateCache map[string]*template.Template
 
 func NewTemplateCache() (TemplateCache, error) {
 	cache := TemplateCache{}
-	pages, err := filepath.Glob("web/assets/templates/pages/*.tmpl.html")
+	pages, err := assets.ReadDir("assets/templates/pages")
 	if err != nil {
 		return nil, err
 	}
 	for _, page := range pages {
-		name := filepath.Base(page)
 		files := []string{
-			"web/assets/templates/index.tmpl.html",
-			page,
+			"assets/templates/index.tmpl.html",
+			fmt.Sprintf("assets/templates/pages/%s", page.Name()),
 		}
-		ts, err := template.ParseFiles(files...)
+		ts, err := template.ParseFS(assets, files...)
 		if err != nil {
 			return nil, err
 		}
-		cache[name] = ts
+		cache[page.Name()] = ts
 	}
 	return cache, nil
 }
