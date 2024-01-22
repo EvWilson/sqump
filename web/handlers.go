@@ -27,6 +27,32 @@ func (r *Router) handleBaseConfig(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/", http.StatusFound)
 }
 
+func (r *Router) setCurrentEnv(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseForm()
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	envSlice, ok := req.Form["current"]
+	if !ok {
+		r.RequestError(w, errors.New("save current env form does not contain field 'current'"))
+		return
+	}
+	env := strings.Join(envSlice, "\n")
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	conf.CurrentEnv = env
+	err = conf.Flush()
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
+}
+
 func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {

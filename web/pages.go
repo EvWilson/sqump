@@ -49,10 +49,12 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 	}
 	r.Render(w, 200, "home.tmpl.html", struct {
 		BaseEnvironmentText string
+		CurrentEnvironment  string
 		Files               []fileInfo
 		Error               string
 	}{
 		BaseEnvironmentText: string(envBytes),
+		CurrentEnvironment:  conf.CurrentEnv,
 		Files:               info,
 		Error:               GetError(w, req),
 	})
@@ -73,18 +75,25 @@ func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
 	r.Render(w, 200, "collection.tmpl.html", struct {
-		Title           string
-		EscapedPath     string
-		EnvironmentText string
-		Requests        []core.Request
-		Error           string
+		Title              string
+		EscapedPath        string
+		EnvironmentText    string
+		CurrentEnvironment string
+		Requests           []core.Request
+		Error              string
 	}{
-		Title:           sq.Title,
-		EscapedPath:     url.PathEscape(path),
-		EnvironmentText: string(envBytes),
-		Requests:        sq.Requests,
-		Error:           GetError(w, req),
+		Title:              sq.Title,
+		EscapedPath:        url.PathEscape(path),
+		EnvironmentText:    string(envBytes),
+		CurrentEnvironment: conf.CurrentEnv,
+		Requests:           sq.Requests,
+		Error:              GetError(w, req),
 	})
 }
 
@@ -102,14 +111,14 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
 	scope := req.URL.Query().Get("scope")
 	var envMap core.EnvMap
 	if scope == "core" {
-		conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-		if err != nil {
-			r.ServerError(w, err)
-			return
-		}
 		envMap = conf.Environment
 		scope = "Core"
 	} else {
@@ -127,23 +136,25 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	r.Render(w, 200, "request.tmpl.html", struct {
-		EscapedPath     string
-		CollectionTitle string
-		Title           string
-		EditText        string
-		EnvironmentText string
-		ExecText        string
-		EnvScope        string
-		Error           string
+		EscapedPath        string
+		CollectionTitle    string
+		Title              string
+		EditText           string
+		EnvironmentText    string
+		CurrentEnvironment string
+		ExecText           string
+		EnvScope           string
+		Error              string
 	}{
-		EscapedPath:     url.PathEscape(path),
-		CollectionTitle: sq.Title,
-		Title:           title,
-		EditText:        request.Script.String(),
-		EnvironmentText: string(envBytes),
-		ExecText:        "",
-		EnvScope:        scope,
-		Error:           GetError(w, req),
+		EscapedPath:        url.PathEscape(path),
+		CollectionTitle:    sq.Title,
+		Title:              title,
+		EditText:           request.Script.String(),
+		EnvironmentText:    string(envBytes),
+		CurrentEnvironment: conf.CurrentEnv,
+		ExecText:           "",
+		EnvScope:           scope,
+		Error:              GetError(w, req),
 	})
 }
 

@@ -21,6 +21,11 @@
 
 	<div class="flex-smaller">
 		<h3>Environment</h3>
+		<form action="/current-env" method="POST">
+			<span>Current environment:</span>
+			<input type="text" name="current" value="{{.CurrentEnvironment}}" />
+			<input type="submit" value="Submit" />
+		</form>
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
 			<textarea class="half" name="config">{{.EnvironmentText}}</textarea>
 			<input type="submit" value="Save">

@@ -47,6 +47,7 @@ func NewRouter() (*Router, error) {
 	}
 	mux.Get("/", r.showHome)
 	mux.Post("/config", r.handleBaseConfig)
+	mux.Post("/current-env", r.setCurrentEnv)
 	mux.Get("/ws", r.handleSocketConnection)
 	mux.Post("/autoregister", r.performAutoregister)
 	mux.Post("/collection/create/new", r.createCollection)
@@ -81,7 +82,6 @@ func (r *Router) Render(w http.ResponseWriter, status int, page string, data any
 	if err != nil {
 		r.ServerError(w, err)
 	}
-	w.WriteHeader(status)
 }
 
 func (r *Router) ServerError(w http.ResponseWriter, err error) {

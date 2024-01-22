@@ -28,6 +28,11 @@
 	</div>
 	<div class="flex-smaller">
 		<h3>Base Environment</h3>
+		<form action="/current-env" method="POST">
+			<span>Current environment:</span>
+			<input type="text" name="current" value="{{.CurrentEnvironment}}" />
+			<input type="submit" value="Submit" />
+		</form>
 		<form action="/config" method="POST">
 			<textarea class="half" name="config">{{.BaseEnvironmentText}}</textarea>
 			<input type="submit" value="Save">

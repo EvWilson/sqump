@@ -18,11 +18,6 @@ func ErrorHandler(next http.Handler) http.Handler {
 	})
 }
 
-type WriterHijacker interface {
-	http.ResponseWriter
-	http.Hijacker
-}
-
 type ErrorResponseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -30,6 +25,7 @@ type ErrorResponseWriter struct {
 
 func (rw *ErrorResponseWriter) WriteHeader(code int) {
 	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }
 
 func (rw *ErrorResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
