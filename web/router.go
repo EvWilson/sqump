@@ -89,9 +89,9 @@ func (r *Router) ServerError(w http.ResponseWriter, err error) {
 	_ = runtime.Callers(2, pcs[:])
 	rec := slog.NewRecord(time.Now(), slog.LevelError, err.Error(), pcs[0])
 	if r.logLevel < slog.LevelInfo {
-		r.l.With("error", err).Handler().Handle(context.Background(), rec)
+		_ = r.l.With("error", err).Handler().Handle(context.Background(), rec)
 	} else {
-		r.l.With("error", err).Handler().Handle(context.Background(), rec)
+		_ = r.l.With("error", err).Handler().Handle(context.Background(), rec)
 	}
 	setErrorCookie(w, fmt.Sprintf("Server error: %v", err))
 	Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
