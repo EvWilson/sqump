@@ -98,7 +98,21 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	envBytes, err := json.MarshalIndent(sq.Environment, "", "  ")
+	scope := req.URL.Query().Get("scope")
+	var envMap core.EnvMap
+	if scope == "core" {
+		conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		envMap = conf.Environment
+		scope = "Core"
+	} else {
+		envMap = sq.Environment
+		scope = "Collection"
+	}
+	envBytes, err := json.MarshalIndent(envMap, "", "  ")
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -115,6 +129,7 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		EditText        string
 		EnvironmentText string
 		ExecText        string
+		EnvScope        string
 	}{
 		EscapedPath:     url.PathEscape(path),
 		CollectionTitle: sq.Title,
@@ -122,6 +137,7 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		EditText:        request.Script.String(),
 		EnvironmentText: string(envBytes),
 		ExecText:        "",
+		EnvScope:        scope,
 	})
 }
 

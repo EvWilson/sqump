@@ -18,18 +18,33 @@
 		</form>
 	</div>
 	<div class="flex-smaller">
-		<h3>Environment</h3>
+		<h3>{{.EnvScope}} Environment</h3>
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
 			<textarea class="half" name="config" id="request-script">{{.EnvironmentText}}</textarea>
 			<input type="hidden" name="title" value="{{.Title}}" />
+			<label for="scope">Scope:</label>
+			<select name="scope" id="scope" onchange="loadScope(value)">
+				<option value="collection">Collection</option>
+				<option value="core">Core</option>
+			</select>
 			<input type="submit" value="Save">
 		</form>
 	</div>
 </div>
 <div>
 	<h3>Execution Results</h3>
-	<textarea id="result" class="third">{{.ExecText}}</textarea>
+	<textarea id="result" class="third" readonly>{{.ExecText}}</textarea>
 </div>
 
 <script src="/ws.js"></script>
+<script>
+const scope = new URLSearchParams(window.location.search).get("scope")
+if (scope !== null) {
+	document.getElementById("scope").value = scope
+}
+
+const loadScope = (value) => {
+	window.location.search = `?scope=${value}`
+}
+</script>
 {{end}}

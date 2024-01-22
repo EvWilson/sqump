@@ -20,11 +20,11 @@ textarea {
   color: var(--text-color);
 }
 
-textarea.half {
+.half {
   height: 50vh;
 }
 
-textarea.third {
+.third {
   height: 30vh;
 }
 

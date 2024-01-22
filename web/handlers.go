@@ -19,18 +19,7 @@ func (r *Router) handleBaseConfig(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	envMap, err := configMap(req)
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	conf.Environment = envMap
-	err = conf.Flush()
+	err = saveCoreConfig(req)
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -44,19 +33,34 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 		r.ServerError(w, err)
 		return
 	}
+	scopeSlice, ok := req.Form["scope"]
+	if !ok {
+		r.RequestError(w, errors.New("save request config form does not contain field 'scope'"))
+		return
+	}
+	scope := strings.Join(scopeSlice, "\n")
 	titleSlice, ok := req.Form["title"]
 	if !ok {
 		r.RequestError(w, errors.New("save request config form does not contain field 'title'"))
 		return
 	}
 	title := strings.Join(titleSlice, "\n")
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	if scope == "core" {
+		err = saveCoreConfig(req)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s?scope=core", url.PathEscape(path), title), http.StatusFound)
+		return
+	}
 	envMap, err := configMap(req)
 	if err != nil {
 		r.ServerError(w, err)
-		return
-	}
-	path, ok := getParamEscaped(r, w, req, "path")
-	if !ok {
 		return
 	}
 	sq, err := core.ReadSqumpfile("/" + path)
@@ -200,4 +204,21 @@ func configMap(req *http.Request) (core.EnvMap, error) {
 		return nil, err
 	}
 	return envMap, nil
+}
+
+func saveCoreConfig(req *http.Request) error {
+	envMap, err := configMap(req)
+	if err != nil {
+		return err
+	}
+	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	if err != nil {
+		return err
+	}
+	conf.Environment = envMap
+	err = conf.Flush()
+	if err != nil {
+		return err
+	}
+	return nil
 }
