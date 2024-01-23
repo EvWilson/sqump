@@ -9,7 +9,11 @@
 		<ul>
 			{{range .Files}}
 			{{$ep := .EscapedPath}}
-			<li><a href="/collection/{{$ep}}">{{.Title}}</a><span class="fade"> - <a class="fade" href="/collection/{{$ep}}/unregister">Unregister</a></span></li>
+			<li>
+				<a href="/collection/{{$ep}}">{{.Title}}</a><span class="fade">
+					- <a class="fade" href="/collection/{{$ep}}/unregister">Unregister</a>
+					- <a class="fade" href="/collection/{{$ep}}/delete">Delete</a></span>
+			</li>
 			<ul>
 				{{range .Requests}}
 				<li><a href="/collection/{{$ep}}/request/{{.Title}}">{{.Title}}</a></li>

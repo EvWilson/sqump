@@ -177,6 +177,25 @@ func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Reque
 	})
 }
 
+func (r *Router) showDeleteCollection(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	sq, err := core.ReadSqumpfile("/" + path)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	r.Render(w, 200, "deleteCollection.tmpl.html", struct {
+		EscapedPath string
+		Title       string
+	}{
+		EscapedPath: url.PathEscape(path),
+		Title:       sq.Title,
+	})
+}
+
 func (r *Router) showDeleteRequest(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {

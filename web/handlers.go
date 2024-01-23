@@ -123,12 +123,25 @@ func (r *Router) createCollection(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/", http.StatusFound)
 }
 
-func (r *Router) performUnregisterCollection(w http.ResponseWriter, req *http.Request) {
+func (r *Router) handleUnregisterCollection(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
 		return
 	}
 	err := handlers.Unregister("/" + path)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	http.Redirect(w, req, "/", http.StatusFound)
+}
+
+func (r *Router) handleDeleteCollection(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	err := handlers.RemoveCollection("/" + path)
 	if err != nil {
 		r.ServerError(w, err)
 		return

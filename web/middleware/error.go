@@ -25,7 +25,9 @@ type ErrorResponseWriter struct {
 
 func (rw *ErrorResponseWriter) WriteHeader(code int) {
 	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
+	if code != http.StatusInternalServerError {
+		rw.ResponseWriter.WriteHeader(code)
+	}
 }
 
 func (rw *ErrorResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
