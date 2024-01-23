@@ -57,6 +57,18 @@ func (em EnvMap) validate() error {
 	return nil
 }
 
+func (em EnvMap) DeepCopy() EnvMap {
+	ret := make(EnvMap, len(em))
+	for k, v := range em {
+		val := make(EnvMapValue, len(v))
+		for valK, valV := range v {
+			val[valK] = valV
+		}
+		ret[k] = val
+	}
+	return ret
+}
+
 type EnvMapValue map[string]string
 
 func (emv EnvMapValue) validate() error {

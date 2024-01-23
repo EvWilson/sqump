@@ -118,12 +118,21 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	}
 	scope := req.URL.Query().Get("scope")
 	var envMap core.EnvMap
-	if scope == "core" {
-		envMap = conf.Environment
-		scope = "Core"
-	} else {
+	switch scope {
+	case "":
+		fallthrough
+	case "collection":
 		envMap = sq.Environment
 		scope = "Collection"
+	case "core":
+		envMap = conf.Environment
+		scope = "Core"
+	case "temp":
+		envMap = getTempConfig()
+		scope = "Temporary"
+	default:
+		r.RequestError(w, fmt.Errorf("unrecognized scope '%s'", scope))
+		return
 	}
 	envBytes, err := json.MarshalIndent(envMap, "", "  ")
 	if err != nil {

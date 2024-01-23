@@ -28,6 +28,8 @@ type Command struct {
 type ViewRequestPayload struct {
 	EscapedPath string `json:"path"`
 	Title       string `json:"title"`
+	Scope       string `json:"scope"`
+	Environment string `json:"environment"`
 }
 
 type ViewResponsePayload struct {
@@ -37,6 +39,8 @@ type ViewResponsePayload struct {
 type ExecRequestPayload struct {
 	EscapedPath string `json:"path"`
 	Title       string `json:"title"`
+	Scope       string `json:"scope"`
+	Environment string `json:"environment"`
 }
 
 type ExecResponsePayload struct {
@@ -146,7 +150,15 @@ func handleViewCommand(conn net.Conn, payload json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	prepared, err := handlers.GetPreparedScript("/"+path, data.Title, nil)
+	var overrides core.EnvMapValue
+	if data.Scope == "temp" {
+		var ok bool
+		overrides, ok = getTempConfig()[data.Environment]
+		if !ok {
+			return fmt.Errorf("no overrides found for environment '%s'", data.Environment)
+		}
+	}
+	prepared, err := handlers.GetPreparedScript("/"+path, data.Title, overrides)
 	if err != nil {
 		return err
 	}
@@ -176,7 +188,15 @@ func handleExecCommand(conn net.Conn, payload json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	err = handlers.ExecuteRequest("/"+path, data.Title, nil)
+	var overrides core.EnvMapValue
+	if data.Scope == "temp" {
+		var ok bool
+		overrides, ok = getTempConfig()[data.Environment]
+		if !ok {
+			return fmt.Errorf("no overrides found for environment '%s'", data.Environment)
+		}
+	}
+	err = handlers.ExecuteRequest("/"+path, data.Title, overrides)
 	if err != nil {
 		return err
 	}

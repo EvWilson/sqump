@@ -75,7 +75,8 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 	if !ok {
 		return
 	}
-	if scope == "core" {
+	switch scope {
+	case "core":
 		err = saveCoreConfig(req)
 		if err != nil {
 			r.ServerError(w, err)
@@ -83,24 +84,37 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 		}
 		http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s?scope=core", url.PathEscape(path), title), http.StatusFound)
 		return
-	}
-	envMap, err := configMap(req)
-	if err != nil {
-		r.ServerError(w, err)
+	case "collection":
+		envMap, err := configMap(req)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		sq, err := core.ReadSqumpfile("/" + path)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		sq.Environment = envMap
+		err = sq.Flush()
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
+		return
+	case "temp":
+		err := saveTempConfig(req)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s?scope=temp", url.PathEscape(path), title), http.StatusFound)
+		return
+	default:
+		r.RequestError(w, fmt.Errorf("unrecognized collection scope '%s'", scope))
 		return
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	sq.Environment = envMap
-	err = sq.Flush()
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
 }
 
 func (r *Router) createCollection(w http.ResponseWriter, req *http.Request) {

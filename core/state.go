@@ -415,39 +415,6 @@ func intOrDefault(table *lua.LTable, key string, defaultVal int) int {
 	return res
 }
 
-func getMapFromTable(table *lua.LTable, key string) (map[string]string, error) {
-	ret := make(map[string]string)
-	var err error
-
-	innerTable := table.RawGetString(key)
-	switch innerTable.Type() {
-	case lua.LTTable:
-		innerTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
-			var keyString string
-			keyString, err = luaTypeToString(k)
-			if err != nil {
-				err = fmt.Errorf("error parsing header key '%s': %v", k, err)
-				return
-			}
-			var valString string
-			valString, err = luaTypeToString(v)
-			if err != nil {
-				err = fmt.Errorf("error parsing header value '%s': %v", v, err)
-				return
-			}
-			ret[keyString] = valString
-		})
-		if err != nil {
-			return nil, err
-		}
-	case lua.LTNil:
-		// this is fine, default to doing nothing
-	default:
-		return nil, fmt.Errorf("unexpected value found for header table slot. value: %v", innerTable.Type())
-	}
-	return ret, nil
-}
-
 func getHeaderTable(table *lua.LTable, key string) (map[string][]string, error) {
 	ret := make(map[string][]string)
 	var err error

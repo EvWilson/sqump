@@ -13,24 +13,25 @@
 		<form action="/collection/{{.EscapedPath}}/request/{{.Title}}/edit-script" method="POST">
 			<textarea class="half" name="edit">{{.EditText}}</textarea>
 			<input type="submit" value="Save">
-			<button type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Title}}')">Execute</button>
-			<button type="button" onclick="viewRequest('{{.EscapedPath}}', '{{.Title}}')">View Substituted Script</button>
+			<button type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
+			<button type="button" onclick="viewRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
 		</form>
 	</div>
 	<div class="flex-smaller">
 		<h3>{{.EnvScope}} Environment</h3>
 		<form action="/current-env" method="POST">
 			<span>Current:</span>
-			<input type="text" name="current" value="{{.CurrentEnvironment}}" />
+			<input type="text" id="current" name="current" value="{{.CurrentEnvironment}}" />
 			<input type="submit" value="Submit" />
 		</form>
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
 			<textarea class="half" name="config" id="request-script">{{.EnvironmentText}}</textarea>
 			<input type="hidden" name="title" value="{{.Title}}" />
 			<label for="scope">Scope:</label>
-			<select name="scope" id="scope" onchange="loadScope(value)">
+			<select id="scope" name="scope" onchange="loadScope(value)">
 				<option value="collection">Collection</option>
 				<option value="core">Core</option>
+				<option value="temp">Temporary</option>
 			</select>
 			<input type="submit" value="Save">
 		</form>
@@ -46,6 +47,14 @@
 const scope = new URLSearchParams(window.location.search).get("scope")
 if (scope !== null) {
 	document.getElementById("scope").value = scope
+}
+
+const getCurrentScope = () => {
+	return document.getElementById("scope").value
+}
+
+const getCurrentEnvironment = () => {
+	return document.getElementById("current").value
 }
 
 const loadScope = (value) => {
