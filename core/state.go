@@ -169,7 +169,7 @@ func (s *State) fetch(L *lua.LState) int {
 		if len(v) != 1 {
 			return s.CancelErr("error: fetch: response header value '%v' had unexpected length: %d", v, len(v))
 		}
-		respHeaderTable.RawSetString(k, lua.LString(v[0]))
+		respHeaderTable.RawSetString(k, sliceToLuaArray(v))
 	}
 
 	// Read response
@@ -240,7 +240,7 @@ func (s *State) printResponse(L *lua.LState) int {
 	if err != nil {
 		return s.CancelErr("error: print_response: while retrieving status code: %v", err)
 	}
-	headers, err := getMapFromTable(resp, "headers")
+	headers, err := getHeaderTable(resp, "headers")
 	if err != nil {
 		return s.CancelErr("error: print_response: while retrieving map from table: %v", err)
 	}
@@ -249,10 +249,15 @@ func (s *State) printResponse(L *lua.LState) int {
 		return s.CancelErr("error: print_response: while retrieving body: %v", err)
 	}
 
-	isJson := func(headers map[string]string) bool {
+	isJson := func(headers map[string][]string) bool {
 		for k, v := range headers {
-			if k == "Content-Type" && v == "application/json" {
-				return true
+			if k == "Content-Type" {
+				for _, header := range v {
+					if strings.Contains(header, "application/json") {
+						return true
+					}
+				}
+				break
 			}
 		}
 		return false
@@ -441,6 +446,59 @@ func getMapFromTable(table *lua.LTable, key string) (map[string]string, error) {
 		return nil, fmt.Errorf("unexpected value found for header table slot. value: %v", innerTable.Type())
 	}
 	return ret, nil
+}
+
+func getHeaderTable(table *lua.LTable, key string) (map[string][]string, error) {
+	ret := make(map[string][]string)
+	var err error
+
+	innerTable := table.RawGetString(key)
+	switch innerTable.Type() {
+	case lua.LTTable:
+		innerTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
+			var keyString string
+			keyString, err = luaTypeToString(k)
+			if err != nil {
+				err = fmt.Errorf("error parsing header key '%s': %v", k, err)
+				return
+			}
+			var valSlice []string
+			valSlice, err = luaArrayToSlice(v)
+			if err != nil {
+				err = fmt.Errorf("error parsing header value '%s': %v", v, err)
+				return
+			}
+			ret[keyString] = valSlice
+		})
+		if err != nil {
+			return nil, err
+		}
+	case lua.LTNil:
+		// this is fine, default to doing nothing
+	default:
+		return nil, fmt.Errorf("unexpected value found for header table slot. value: %v", innerTable.Type())
+	}
+	return ret, nil
+}
+
+func sliceToLuaArray(strs []string) *lua.LTable {
+	arr := lua.LTable{}
+	for _, s := range strs {
+		arr.Append(lua.LString(s))
+	}
+	return &arr
+}
+
+func luaArrayToSlice(val lua.LValue) ([]string, error) {
+	if val.Type() != lua.LTTable {
+		return nil, fmt.Errorf("luaArrayToSlice expected table type, got '%s'", val.Type().String())
+	}
+	arr := val.(*lua.LTable)
+	strs := make([]string, 0, arr.Len())
+	arr.ForEach(func(_, l2 lua.LValue) {
+		strs = append(strs, l2.String())
+	})
+	return strs, nil
 }
 
 func anyToLValue(arg any) (lua.LValue, error) {
