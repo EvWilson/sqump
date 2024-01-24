@@ -11,6 +11,10 @@ type Printer interface {
 
 var printer Printer
 
+func CurrentPrinter() Printer {
+	return printer
+}
+
 func SetPrinter(p Printer) {
 	printer = p
 }

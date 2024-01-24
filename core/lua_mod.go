@@ -54,6 +54,7 @@ func CreateState(
 	}
 	state.loopCheck[state.currentIdent.String()] = true
 
+	L.SetGlobal("print", L.NewFunction(printViaCore))
 	L.PreloadModule("sqump", func(l *lua.LState) int {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
 			"execute":        state.execute,
@@ -65,21 +66,20 @@ func CreateState(
 		L.Push(mod)
 		return 1
 	})
-	L.SetGlobal("print", L.NewFunction(printViaCore))
+	state.registerKafkaModule(L)
 
 	return &state
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
-func (s *State) fetch(L *lua.LState) int {
+func (s *State) fetch(_ *lua.LState) int {
 	// Get params
-	resourceVal := L.Get(1)
-	if resourceVal.Type() != lua.LTString {
-		return s.CancelErr("error: fetch: expected resource parameter to be string, instead got: %s", resourceVal.Type().String())
+	resource, err := getStringParam(s.LState, "resource", 1)
+	if err != nil {
+		return s.CancelErr("error: fetch: %v", err)
 	}
-	resource := lua.LVAsString(resourceVal)
 
-	optionVal := L.Get(2)
+	optionVal := s.LState.Get(2)
 	var options *lua.LTable
 	switch optionVal.Type() {
 	case lua.LTTable:
@@ -87,7 +87,7 @@ func (s *State) fetch(L *lua.LState) int {
 	case lua.LTNil:
 		options = &lua.LTable{}
 	default:
-		return s.CancelErr("error: fetch: expected options parameter to be table or nil, instead got: %s", optionVal.Type().String())
+		return s.CancelErr("error: fetch: expected 'options' parameter to be table or nil, instead got: %s", optionVal.Type().String())
 	}
 
 	// Marshal body
@@ -182,16 +182,15 @@ func (s *State) fetch(L *lua.LState) int {
 	respTable.RawSetString("status", lua.LNumber(resp.StatusCode))
 	respTable.RawSetString("headers", respHeaderTable)
 	respTable.RawSetString("body", lua.LString(string(b)))
-	L.Push(respTable)
+	s.LState.Push(respTable)
 	return 1
 }
 
-func (s *State) execute(L *lua.LState) int {
-	requestVal := L.Get(1)
-	if requestVal.Type() != lua.LTString {
-		return s.CancelErr("error: execute: expected request parameter to be string, instead got: %s", requestVal.Type().String())
+func (s *State) execute(_ *lua.LState) int {
+	request, err := getStringParam(s.LState, "request", 1)
+	if err != nil {
+		return s.CancelErr("error: execute: %v", err)
 	}
-	request := lua.LVAsString(requestVal)
 
 	ident := s.currentIdent
 	ident.Request = request
@@ -214,12 +213,12 @@ func (s *State) execute(L *lua.LState) int {
 		s.exports[ident.String()] = export
 	}
 
-	L.Push(export)
+	s.LState.Push(export)
 	return 1
 }
 
-func (s *State) export(L *lua.LState) int {
-	ctxVal := L.Get(1)
+func (s *State) export(_ *lua.LState) int {
+	ctxVal := s.LState.Get(1)
 	if ctxVal.Type() != lua.LTTable {
 		return s.CancelErr("error: export: expected context parameter to be table, instead got: %s", ctxVal.Type().String())
 	}
@@ -229,8 +228,8 @@ func (s *State) export(L *lua.LState) int {
 	return 0
 }
 
-func (s *State) printResponse(L *lua.LState) int {
-	respVal := L.Get(1)
+func (s *State) printResponse(_ *lua.LState) int {
+	respVal := s.LState.Get(1)
 	if respVal.Type() != lua.LTTable {
 		return s.CancelErr("error: print_response: expected response parameter to be table, instead got: %s", respVal.Type().String())
 	}
@@ -281,13 +280,13 @@ func (s *State) printResponse(L *lua.LState) int {
 	return 0
 }
 
-func (s *State) drillJSON(L *lua.LState) int {
-	queryVal := L.Get(1)
+func (s *State) drillJSON(_ *lua.LState) int {
+	queryVal := s.LState.Get(1)
 	if queryVal.Type() != lua.LTString {
 		return s.CancelErr("error: drill_json: expected query parameter to be string, instead got: %s", queryVal.Type().String())
 	}
 	query := lua.LVAsString(queryVal)
-	jsonVal := L.Get(2)
+	jsonVal := s.LState.Get(2)
 	if jsonVal.Type() != lua.LTString {
 		return s.CancelErr("error: drill_json: expected json parameter to be string, instead got: %s", jsonVal.Type().String())
 	}
@@ -328,7 +327,7 @@ func (s *State) drillJSON(L *lua.LState) int {
 			if err != nil {
 				return s.CancelErr("error: drill_json: while converting discrete value to Lua value: %v", err)
 			}
-			L.Push(lVal)
+			s.LState.Push(lVal)
 			return 1
 		default:
 			return s.CancelErr("error: drill_json: found unexpected type value '%v' for '%v'", reflect.TypeOf(resolved), resolved)
@@ -336,14 +335,14 @@ func (s *State) drillJSON(L *lua.LState) int {
 	}
 	switch resolved := v.(type) {
 	case map[string]any, []any:
-		L.Push(lua.LString(fmt.Sprintf("%v", resolved)))
+		s.LState.Push(lua.LString(fmt.Sprintf("%v", resolved)))
 		return 1
 	case bool, string, float64, int, nil:
 		lVal, err := anyToLValue(resolved)
 		if err != nil {
 			return s.CancelErr("error: drill_json: while converting discrete value to Lua value: %v", err)
 		}
-		L.Push(lVal)
+		s.LState.Push(lVal)
 		return 1
 	default:
 		return s.CancelErr("error: drill_json: encountered unexpected data type post-loop: %v", reflect.TypeOf(v))
@@ -364,123 +363,4 @@ func (s *State) CancelErr(format string, args ...any) int {
 	s.err = fmt.Errorf(format, args...)
 	s.cancel()
 	return 0
-}
-
-func luaTypeToString(val lua.LValue) (string, error) {
-	switch val.Type() {
-	case lua.LTString:
-		return val.String(), nil
-	default:
-		return "", fmt.Errorf("incorrect type for value: %s\n", val.Type().String())
-	}
-}
-
-func getString(table *lua.LTable, key string) (string, error) {
-	val := table.RawGetString(key)
-	switch val.Type() {
-	case lua.LTString:
-		return val.String(), nil
-	default:
-		return "", fmt.Errorf("expected type '%s', got: '%s'", lua.LTString.String(), val.Type().String())
-	}
-}
-
-func stringOrDefault(table *lua.LTable, key, defaultVal string) string {
-	res, err := getString(table, key)
-	if err != nil {
-		return defaultVal
-	}
-	return res
-}
-
-func getInt(table *lua.LTable, key string) (int, error) {
-	val := table.RawGetString(key)
-	switch val.Type() {
-	case lua.LTNumber:
-		res, err := strconv.Atoi(val.String())
-		if err != nil {
-			return -1, err
-		}
-		return res, nil
-	default:
-		return -1, fmt.Errorf("expected type '%s', got: '%s'", lua.LTNumber.String(), val.Type().String())
-	}
-}
-
-func intOrDefault(table *lua.LTable, key string, defaultVal int) int {
-	res, err := getInt(table, key)
-	if err != nil {
-		return defaultVal
-	}
-	return res
-}
-
-func getHeaderTable(table *lua.LTable, key string) (map[string][]string, error) {
-	ret := make(map[string][]string)
-	var err error
-
-	innerTable := table.RawGetString(key)
-	switch innerTable.Type() {
-	case lua.LTTable:
-		innerTable.(*lua.LTable).ForEach(func(k, v lua.LValue) {
-			var keyString string
-			keyString, err = luaTypeToString(k)
-			if err != nil {
-				err = fmt.Errorf("error parsing header key '%s': %v", k, err)
-				return
-			}
-			var valSlice []string
-			valSlice, err = luaArrayToSlice(v)
-			if err != nil {
-				err = fmt.Errorf("error parsing header value '%s': %v", v, err)
-				return
-			}
-			ret[keyString] = valSlice
-		})
-		if err != nil {
-			return nil, err
-		}
-	case lua.LTNil:
-		// this is fine, default to doing nothing
-	default:
-		return nil, fmt.Errorf("unexpected value found for header table slot. value: %v", innerTable.Type())
-	}
-	return ret, nil
-}
-
-func sliceToLuaArray(strs []string) *lua.LTable {
-	arr := lua.LTable{}
-	for _, s := range strs {
-		arr.Append(lua.LString(s))
-	}
-	return &arr
-}
-
-func luaArrayToSlice(val lua.LValue) ([]string, error) {
-	if val.Type() != lua.LTTable {
-		return nil, fmt.Errorf("luaArrayToSlice expected table type, got '%s'", val.Type().String())
-	}
-	arr := val.(*lua.LTable)
-	strs := make([]string, 0, arr.Len())
-	arr.ForEach(func(_, l2 lua.LValue) {
-		strs = append(strs, l2.String())
-	})
-	return strs, nil
-}
-
-func anyToLValue(arg any) (lua.LValue, error) {
-	switch resolved := arg.(type) {
-	case string:
-		return lua.LString(resolved), nil
-	case float64:
-		return lua.LNumber(resolved), nil
-	case int:
-		return lua.LNumber(resolved), nil
-	case bool:
-		return lua.LBool(resolved), nil
-	case nil:
-		return lua.LNil, nil
-	default:
-		return lua.LNil, fmt.Errorf("no compatible Lua value found for '%v' of type '%v'", arg, reflect.TypeOf(arg))
-	}
 }
