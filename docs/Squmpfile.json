@@ -1,0 +1,37 @@
+{
+  "version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "title": "Demo_Squmpfile",
+  "requests": [
+    {
+      "title": "Req1",
+      "script": [
+        "local s = require('sqump')\r",
+        "\r",
+        "local resp = s.fetch('https://pokeapi.co/api/v2/pokemon/{{.pokemon}}')\r",
+        "\r",
+        "-- s.print_response(resp)\r",
+        "\r",
+        "print(s.drill_json('id', resp.body), s.drill_json('types.1.type.name', resp.body))\r",
+        "\r",
+        "s.export({\r",
+        "  pokemon = resp.body,\r",
+        "})"
+      ]
+    },
+    {
+      "title": "Req2",
+      "script": [
+        "print('hello world!')"
+      ]
+    }
+  ],
+  "environment": {
+    "staging": {
+      "pokemon": "pikachu"
+    }
+  }
+}

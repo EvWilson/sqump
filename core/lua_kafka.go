@@ -88,7 +88,7 @@ func (s *State) newConsumer(_ *lua.LState) int {
 	}
 	options := getMapParamWithDefault(s.LState, "options", 4, make(map[string]string))
 	offset := kafka.FirstOffset
-	if offsetOverride, ok := options["offset_first"]; ok {
+	if offsetOverride, ok := options["offset_last"]; ok {
 		if offsetOverride == "true" {
 			offset = kafka.LastOffset
 		}
@@ -103,6 +103,7 @@ func (s *State) newConsumer(_ *lua.LState) int {
 		Topic:       topic,
 		Dialer:      kafka.DefaultDialer,
 		StartOffset: offset,
+		MaxWait:     500 * time.Millisecond,
 		Logger:      p,
 		ErrorLogger: p,
 	}
