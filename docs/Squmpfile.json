@@ -25,13 +25,52 @@
     {
       "title": "Req2",
       "script": [
-        "print('hello world!')"
+        "local s = require('sqump')\r",
+        "\r",
+        "local res = s.execute('Req1')\r",
+        "\r",
+        "local weight = s.drill_json('weight', res.pokemon)\r",
+        "local id = s.drill_json('id', res.pokemon)\r",
+        "\r",
+        "local k = require('sqump_kafka')\r",
+        "local brokers = {'localhost:9092'}\r",
+        "local topic = 'weights'\r",
+        "\r",
+        "k.provision_topic(brokers, topic)\r",
+        "\r",
+        "local p = k.new_producer(brokers, topic, 5)\r",
+        "p:write(tostring(id), tostring(weight))\r",
+        "p:close()\r",
+        "print('done writing!')"
+      ]
+    },
+    {
+      "title": "Req3",
+      "script": [
+        "local k = require('sqump_kafka')\r",
+        "\r",
+        "local brokers = {'localhost:9092'}\r",
+        "local topic = 'weights'\r",
+        "\r",
+        "math.randomseed(os.time())\r",
+        "local c = k.new_consumer(brokers, string.format(\"group-%d\", math.random(1, 1000)), topic)\r",
+        "\r",
+        "local sum, count = 0, 0\r",
+        "for i=1,2 do\r",
+        "  local msg = c:read_message(15)\r",
+        "  sum = sum + msg.data\r",
+        "  count = count + 1\r",
+        "end\r",
+        "c:close()\r",
+        "\r",
+        "print('Total weight:', sum)\r",
+        "print('Average:', sum / count)"
       ]
     }
   ],
   "environment": {
     "staging": {
-      "pokemon": "pikachu"
+      "pokemon": "snorlax"
     }
   }
 }

@@ -73,4 +73,48 @@ With this, we can check Pikachu's Pokédex ID and the name of his typing, then e
 ### Bringing in Kafka
 For this next portion, we'll assume that you have Docker installed. We'll be using it to run the `docker-compose.yml` file in this directory to bring up a local Kafka instance to test with.
 
-TODO: complete Kafka guide
+Let's go ahead and spin up that Kafka instance by executing `docker compose -f docker-compose.yml up` with that file, and waiting for it to finish coming up.
+
+After that's done, we'll go ahead and create a new script with the following:
+```lua
+local s = require('sqump')
+
+local res = s.execute('Req1')
+
+local weight = s.drill_json('weight', res.pokemon)
+local id = s.drill_json('id', res.pokemon)
+
+local k = require('sqump_kafka')
+local brokers = {'localhost:9092'}
+local topic = 'weights'
+
+k.provision_topic(brokers, topic)
+
+local p = k.new_producer(brokers, topic, 5)
+p:write(tostring(id), tostring(weight))
+p:close()
+print('done writing!')
+```
+Here, we're taking the results from our Pokémon search script and writing the weight to a new topic in our Kafka cluster. We're even making sure to provision the topic to ensure it exists before writing!
+
+Next, let's setup up a quick script to consume from our new topic and average the weights we receive:
+```lua
+local k = require('sqump_kafka')
+
+local brokers = {'localhost:9092'}
+local topic = 'weights'
+
+math.randomseed(os.time())
+local c = k.new_consumer(brokers, string.format("group-%d", math.random(1, 1000)), topic)
+
+local sum, count = 0, 0
+for i=1,2 do
+  local msg = c:read_message(15)
+  sum = sum + msg.data
+  count = count + 1
+end
+c:close()
+
+print('Total weight:', sum)
+print('Average:', sum / count)
+```
