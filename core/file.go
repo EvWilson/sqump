@@ -33,7 +33,12 @@ func (s Script) String() string {
 }
 
 func ScriptFromString(s string) Script {
-	return strings.Split(s, "\n")
+	split := strings.Split(s, "\n")
+	// Try to defend against \r\n
+	for i, sp := range split {
+		split[i] = strings.TrimSuffix(sp, "\r")
+	}
+	return split
 }
 
 func NewRequest(title string) *Request {
@@ -72,11 +77,9 @@ func (em EnvMap) DeepCopy() EnvMap {
 type EnvMapValue map[string]string
 
 func (emv EnvMapValue) validate() error {
-	for k, v := range emv {
+	for k := range emv {
 		if strings.Contains(k, "-") {
 			return fmt.Errorf("cannot accept submap key '%s' with '-' character", k)
-		} else if strings.Contains(v, "-") {
-			return fmt.Errorf("cannot accept submap value '%s' with '-' character", v)
 		}
 	}
 	return nil

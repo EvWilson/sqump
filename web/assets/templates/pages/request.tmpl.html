@@ -1,5 +1,8 @@
 {{define "title"}}Request{{end}}
 {{define "main"}}
+{{with .Error}}
+<div class="error-flash">{{.}}</div>
+{{end}}
 <div class="flex-container flex-column">
 	<div class="flex-smaller"><a href="/">&lt;&lt; Home</a></div>
 	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}">&lt;&lt; Back to Collection</a></div>

@@ -105,7 +105,7 @@ local brokers = {'localhost:9092'}
 local topic = 'weights'
 
 math.randomseed(os.time())
-local c = k.new_consumer(brokers, string.format("group-%d", math.random(1, 1000)), topic)
+local c = k.new_consumer(brokers, string.format("weights-%d", math.random(1, 1000)), topic)
 
 local sum, count = 0, 0
 for i=1,2 do
@@ -118,3 +118,6 @@ c:close()
 print('Total weight:', sum)
 print('Average:', sum / count)
 ```
+Here we create a consumer with a randomized group ID to get the full run each time, then iterate over the messages to sum and then average the weights.
+
+That's all for this initial walkthrough, to show the basic options that are available! Be sure to check out the API docs in this directory to see what all else is available.

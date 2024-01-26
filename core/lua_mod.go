@@ -166,9 +166,6 @@ func (s *State) fetch(_ *lua.LState) int {
 	// Gather headers into a lua table
 	respHeaderTable := &lua.LTable{}
 	for k, v := range resp.Header {
-		if len(v) != 1 {
-			return s.CancelErr("error: fetch: response header value '%v' had unexpected length: %d", v, len(v))
-		}
 		respHeaderTable.RawSetString(k, sliceToLuaArray(v))
 	}
 
