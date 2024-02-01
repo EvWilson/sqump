@@ -1,0 +1,28 @@
+{
+  "type": "module",
+  "scripts": {
+    "build-lua": "rollup --config lua-rollup.config.js",
+    "move-lua": "mv lua-bundle.min.js ../assets/editor/",
+    "build-json": "rollup --config json-rollup.config.js",
+    "move-json": "mv json-bundle.min.js ../assets/editor/",
+    "build": "npm run build-lua && npm run move-lua && npm run build-json && npm run move-json"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.12.0",
+    "@codemirror/commands": "^6.3.3",
+    "@codemirror/lang-javascript": "^6.2.1",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/legacy-modes": "^6.3.3",
+    "@codemirror/lint": "^6.5.0",
+    "@codemirror/search": "^6.5.5",
+    "@codemirror/state": "^6.4.0",
+    "@codemirror/view": "^6.23.1",
+    "codemirror": "^6.0.1",
+    "thememirror": "^2.0.1"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.9.6"
+  }
+}

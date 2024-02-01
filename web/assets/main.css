@@ -56,3 +56,11 @@ textarea {
 .fade {
   color: var(--fade-text-color);
 }
+
+.cm-scroller {
+  overflow: auto;
+}
+
+.cm-editor {
+  height: 50vh;
+}
