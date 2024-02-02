@@ -7,7 +7,7 @@ export default {
     file: 'lua-bundle.min.js',
     format: 'iife',
     name: 'version',
-    // plugins: [terser()]
+    plugins: [terser()]
   },
   plugins: [nodeResolve()]
 }
