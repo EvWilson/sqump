@@ -27,6 +27,7 @@ export const defaultSetup = [
   crosshairCursor(),
   highlightActiveLine(),
   highlightSelectionMatches(),
+  EditorView.lineWrapping,
   keymap.of([
     ...closeBracketsKeymap,
     ...defaultKeymap,

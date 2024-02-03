@@ -29,7 +29,6 @@
 			<input type="submit" value="Submit" />
 		</form>
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
-			<!-- <textarea class="half" name="config" id="request-script">{{.EnvironmentText}}</textarea> -->
 			<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
 			<div id="json-editor" class="half"></div>
 			<input type="hidden" name="title" value="{{.Title}}" />
