@@ -67,13 +67,18 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 	scope := strings.Join(scopeSlice, "\n")
 	titleSlice, ok := req.Form["title"]
 	if !ok {
-		r.RequestError(w, errors.New("save request config form does not contain field 'title'"))
-		return
+		titleSlice = []string{}
 	}
 	title := strings.Join(titleSlice, "\n")
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
 		return
+	}
+	var redirectURL string
+	if title != "" {
+		redirectURL = fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title)
+	} else {
+		redirectURL = fmt.Sprintf("/collection/%s", url.PathEscape(path))
 	}
 	switch scope {
 	case "core":
@@ -82,7 +87,7 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 			r.ServerError(w, err)
 			return
 		}
-		http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s?scope=core", url.PathEscape(path), title), http.StatusFound)
+		http.Redirect(w, req, fmt.Sprintf("%s?scope=core", redirectURL), http.StatusFound)
 		return
 	case "collection":
 		envMap, err := configMap(req)
@@ -101,7 +106,7 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 			r.ServerError(w, err)
 			return
 		}
-		http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
+		http.Redirect(w, req, redirectURL, http.StatusFound)
 		return
 	case "temp":
 		err := saveTempConfig(req)
@@ -109,7 +114,7 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 			r.ServerError(w, err)
 			return
 		}
-		http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s?scope=temp", url.PathEscape(path), title), http.StatusFound)
+		http.Redirect(w, req, fmt.Sprintf("%s?scope=temp", redirectURL), http.StatusFound)
 		return
 	default:
 		r.RequestError(w, fmt.Errorf("unrecognized collection scope '%s'", scope))

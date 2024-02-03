@@ -27,9 +27,12 @@
 			<input type="submit" value="Submit" />
 		</form>
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
-			<textarea class="half" name="config">{{.EnvironmentText}}</textarea>
+			<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
+			<div id="json-editor" class="half"></div>
+			<input type="hidden" name="scope" value="collection" />
 			<input type="submit" value="Save">
 		</form>
 	</div>
 </div>
+<script language="javascript" type="text/javascript" charset="utf-8" src="/editor/json-bundle.min.js"></script>
 {{end}}
