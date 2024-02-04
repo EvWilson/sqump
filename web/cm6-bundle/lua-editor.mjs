@@ -7,8 +7,6 @@ import { defaultSetup, syncEditorValue } from "./shared.mjs"
 const luaSource = document.querySelector("#lua-editarea")
 const luaTarget = document.querySelector("#lua-editor")
 
-// Messing with state seemed to be trouble
-// Mostly took this config from https://codemirror.net/examples/config/, near the end
 new EditorView({
   state: EditorState.create({
     doc: luaSource.value,

@@ -8,7 +8,8 @@ import { crosshairCursor, drawSelection, dropCursor, EditorView, highlightActive
 import { coolGlow } from "thememirror"
 
 // Taken from: https://github.com/codemirror/basic-setup
-// Mostly, at least. Also added small bits like the sibling tab-indent handling
+// Mostly, at least. Also added small bits like the sibling tab-indent handling,
+// and theme
 export const defaultSetup = [
   lineNumbers(),
   highlightActiveLineGutter(),
