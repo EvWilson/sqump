@@ -1,6 +1,6 @@
 let ws = new WebSocket("ws://localhost:5309/ws")
 
-ws.onopen = (e) => {}
+ws.onopen = (_) => { }
 
 ws.onmessage = (event) => {
 	// console.log(`[message] data received from server: ${event.data}`);

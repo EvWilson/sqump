@@ -1,5 +1,6 @@
 :root {
-  --bg-color: #262626;
+  --bg-color: #060521;
+  --fg-color: #99eeff33;
   --border-color: #f6f6f6;
   --text-color: white;
   --fade-text-color: #a1a1a1;
@@ -20,6 +21,11 @@ textarea {
   width: calc(100% - 10px);
   background-color: var(--bg-color);
   color: var(--text-color);
+}
+
+button, input[type=submit], input[type=text], select {
+  color: var(--text-color);
+  background-color: var(--bg-color);
 }
 
 .error-flash {
@@ -55,4 +61,24 @@ textarea {
 
 .fade {
   color: var(--fade-text-color);
+}
+
+.cm-scroller {
+  overflow: auto;
+}
+
+.cm-editor {
+  height: 50vh;
+}
+
+#lua-editor {
+  /* top | right | bottom | left */
+  margin: 2px 10px 2px 0px;
+  border: 1px solid var(--text-color);
+}
+
+#json-editor {
+  /* top | right | bottom | left */
+  margin: 2px 0px 2px 0px;
+  border: 1px solid var(--text-color);
 }

@@ -14,10 +14,11 @@
 	<div class="flex-bigger">
 		<h3>Edit</h3>
 		<form action="/collection/{{.EscapedPath}}/request/{{.Title}}/edit-script" method="POST">
-			<textarea class="half" name="edit">{{.EditText}}</textarea>
-			<input type="submit" value="Save">
-			<button type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
-			<button type="button" onclick="viewRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
+			<textarea id="lua-editarea" name="edit" hidden>{{.EditText}}</textarea>
+			<div id="lua-editor" class="half"></div>
+			<input id="lua-submit" type="submit" value="Save">
+			<button id="lua-exec" type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
+			<button id="lua-view" type="button" onclick="viewRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
 		</form>
 	</div>
 	<div class="flex-smaller">
@@ -28,7 +29,8 @@
 			<input type="submit" value="Submit" />
 		</form>
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
-			<textarea class="half" name="config" id="request-script">{{.EnvironmentText}}</textarea>
+			<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
+			<div id="json-editor" class="half"></div>
 			<input type="hidden" name="title" value="{{.Title}}" />
 			<label for="scope">Scope:</label>
 			<select id="scope" name="scope" onchange="loadScope(value)">
@@ -36,7 +38,7 @@
 				<option value="core">Core</option>
 				<option value="temp">Temporary</option>
 			</select>
-			<input type="submit" value="Save">
+			<input id="json-submit" type="submit" value="Save">
 		</form>
 	</div>
 </div>
@@ -45,7 +47,10 @@
 	<textarea id="result" class="third" readonly>{{.ExecText}}</textarea>
 </div>
 
-<script src="/ws.js"></script>
+<script language="javascript" type="text/javascript" charset="utf-8" src="/ws.js"></script>
+<script language="javascript" type="text/javascript" charset="utf-8" src="/editor/lua-bundle.min.js"></script>
+<script language="javascript" type="text/javascript" charset="utf-8" src="/editor/json-bundle.min.js"></script>
+
 <script>
 const scope = new URLSearchParams(window.location.search).get("scope")
 if (scope !== null) {

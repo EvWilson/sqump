@@ -38,12 +38,15 @@
 			<input type="submit" value="Submit" />
 		</form>
 		<form action="/config" method="POST">
-			<textarea class="half" name="config">{{.BaseEnvironmentText}}</textarea>
+			<textarea id="json-editarea" name="config" hidden>{{.BaseEnvironmentText}}</textarea>
+			<div id="json-editor" class="half"></div>
+			<input type="hidden" name="scope" value="core" />
 			<input type="submit" value="Save">
 		</form>
 	</div>
 </div>
 
+<script language="javascript" type="text/javascript" charset="utf-8" src="/editor/json-bundle.min.js"></script>
 <script>
 const autoregister = async () => {
 	await fetch("/autoregister", {
