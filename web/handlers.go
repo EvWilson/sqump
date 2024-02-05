@@ -142,6 +142,29 @@ func (r *Router) createCollection(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/", http.StatusFound)
 }
 
+func (r *Router) handleRenameCollection(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	err := req.ParseForm()
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	newTitle, ok := req.Form["new-name"]
+	if !ok {
+		r.RequestError(w, errors.New("rename collection form does not contain field 'new-name'"))
+		return
+	}
+	err = handlers.UpdateCollectionName(fmt.Sprintf("/%s", path), strings.Join(newTitle, "\n"))
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	http.Redirect(w, req, "/", http.StatusFound)
+}
+
 func (r *Router) handleUnregisterCollection(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
@@ -190,6 +213,36 @@ func (r *Router) createRequest(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
+}
+
+func (r *Router) handleRenameRequest(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	err := req.ParseForm()
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	oldNameSlice, ok := req.Form["old-name"]
+	if !ok {
+		r.RequestError(w, errors.New("rename request form does not contain field 'old-name'"))
+		return
+	}
+	oldName := strings.Join(oldNameSlice, "\n")
+	newNameSlice, ok := req.Form["new-name"]
+	if !ok {
+		r.RequestError(w, errors.New("rename request form does not contain field 'new-name'"))
+		return
+	}
+	newName := strings.Join(newNameSlice, "\n")
+	err = handlers.UpdateRequestName(fmt.Sprintf("/%s", path), oldName, newName)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), newName), http.StatusFound)
 }
 
 func (r *Router) updateRequestScript(w http.ResponseWriter, req *http.Request) {

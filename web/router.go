@@ -54,6 +54,8 @@ func NewRouter() (*Router, error) {
 	mux.Route("/collection/{path}", func(mux chi.Router) {
 		mux.Get("/", r.showCollection)
 		mux.Post("/config", r.handleCollectionConfig)
+		mux.Get("/rename", r.showRenameCollection)
+		mux.Post("/rename", r.handleRenameCollection)
 		mux.Get("/unregister", r.showUnregisterCollection)
 		mux.Post("/unregister", r.handleUnregisterCollection)
 		mux.Get("/delete", r.showDeleteCollection)
@@ -62,6 +64,8 @@ func NewRouter() (*Router, error) {
 			mux.Post("/create/new", r.createRequest)
 			mux.Get("/{title}", r.showRequest)
 			mux.Post("/{title}/edit-script", r.updateRequestScript)
+			mux.Get("/{title}/rename", r.showRenameRequest)
+			mux.Post("/{title}/rename", r.handleRenameRequest)
 			mux.Get("/{title}/delete", r.showDeleteRequest)
 			mux.Post("/{title}/delete", r.performDeleteRequest)
 		})

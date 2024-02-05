@@ -1,8 +1,5 @@
 {{define "title"}}Home{{end}}
 {{define "main"}}
-{{with .Error}}
-<div class="error-flash">{{.}}</div>
-{{end}}
 <div class="flex-container">
 	<div class="flex-bigger">
 		<h3>Collections</h3>
@@ -10,9 +7,12 @@
 			{{range .Files}}
 			{{$ep := .EscapedPath}}
 			<li>
-				<a href="/collection/{{$ep}}">{{.Title}}</a><span class="fade">
+				<a href="/collection/{{$ep}}">{{.Title}}</a>
+				<span class="fade">
+					- <a class="fade" href="/collection/{{$ep}}/rename">Rename</a>
 					- <a class="fade" href="/collection/{{$ep}}/unregister">Unregister</a>
-					- <a class="fade" href="/collection/{{$ep}}/delete">Delete</a></span>
+					- <a class="fade" href="/collection/{{$ep}}/delete">Delete</a>
+				</span>
 			</li>
 			<ul>
 				{{range .Requests}}

@@ -167,6 +167,27 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func (r *Router) showRenameCollection(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	sq, err := core.ReadSqumpfile("/" + path)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	r.Render(w, 200, "renameCollection.tmpl.html", struct {
+		EscapedPath string
+		Title       string
+		Error       string
+	}{
+		EscapedPath: url.PathEscape(path),
+		Title:       sq.Title,
+		Error:       GetError(w, req),
+	})
+}
+
 func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Request) {
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
@@ -180,9 +201,11 @@ func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Reque
 	r.Render(w, 200, "unregister.tmpl.html", struct {
 		EscapedPath string
 		Title       string
+		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
 		Title:       sq.Title,
+		Error:       GetError(w, req),
 	})
 }
 
@@ -199,9 +222,38 @@ func (r *Router) showDeleteCollection(w http.ResponseWriter, req *http.Request) 
 	r.Render(w, 200, "deleteCollection.tmpl.html", struct {
 		EscapedPath string
 		Title       string
+		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
 		Title:       sq.Title,
+		Error:       GetError(w, req),
+	})
+}
+
+func (r *Router) showRenameRequest(w http.ResponseWriter, req *http.Request) {
+	path, ok := getParamEscaped(r, w, req, "path")
+	if !ok {
+		return
+	}
+	title, ok := getParamEscaped(r, w, req, "title")
+	if !ok {
+		return
+	}
+	sq, err := core.ReadSqumpfile("/" + path)
+	if err != nil {
+		r.ServerError(w, err)
+		return
+	}
+	r.Render(w, 200, "renameRequest.tmpl.html", struct {
+		EscapedPath     string
+		CollectionTitle string
+		RequestTitle    string
+		Error           string
+	}{
+		EscapedPath:     url.PathEscape(path),
+		CollectionTitle: sq.Title,
+		RequestTitle:    title,
+		Error:           GetError(w, req),
 	})
 }
 
@@ -224,10 +276,12 @@ func (r *Router) showDeleteRequest(w http.ResponseWriter, req *http.Request) {
 		CollectionTitle string
 		RequestTitle    string
 		Previous        string
+		Error           string
 	}{
 		EscapedPath:     url.PathEscape(path),
 		CollectionTitle: sq.Title,
 		RequestTitle:    title,
+		Error:           GetError(w, req),
 	})
 }
 
