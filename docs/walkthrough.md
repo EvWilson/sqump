@@ -105,12 +105,15 @@ local brokers = {'localhost:9092'}
 local topic = 'weights'
 
 math.randomseed(os.time())
-local c = k.new_consumer(brokers, string.format("weights-%d", math.random(1, 1000)), topic)
+local c = k.new_consumer(brokers, string.format("group-%d", math.random(1, 1000)), topic, 'first')
 
 local sum, count = 0, 0
-for i=1,2 do
-  local msg = c:read_message(15)
-  sum = sum + msg.data
+while true do
+  local msg = c:read_message(5, false)
+  if msg == nil then
+    break
+  end
+  sum = sum + tonumber(msg.data)
   count = count + 1
 end
 c:close()

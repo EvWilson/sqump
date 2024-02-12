@@ -2,10 +2,12 @@ package exec
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/EvWilson/sqump/prnt"
@@ -87,12 +89,18 @@ func (s *State) newConsumer(_ *lua.LState) int {
 	if err != nil {
 		return s.CancelErr("error: new_consumer: %v", err)
 	}
-	options := getMapParamWithDefault(s.LState, "options", 4, make(map[string]string))
-	offset := kafka.FirstOffset
-	if offsetOverride, ok := options["offset_last"]; ok {
-		if offsetOverride == "true" {
-			offset = kafka.LastOffset
-		}
+	offsetParam, err := getStringParam(s.LState, "offset", 4)
+	if err != nil {
+		return s.CancelErr("error: new_consumer: %v", err)
+	}
+	var offset int64
+	switch strings.ToLower(offsetParam) {
+	case "first":
+		offset = kafka.FirstOffset
+	case "last":
+		offset = kafka.LastOffset
+	default:
+		return s.CancelErr(fmt.Sprintf("error: new_consumer: unexpected offset '%s'", offsetParam))
 	}
 	p, err := NewKafkaPrinter("sqump-consumer")
 	if err != nil {
@@ -124,11 +132,21 @@ func (s *State) readMessage(_ *lua.LState) int {
 	if err != nil {
 		return s.CancelErr("error: read_message: %v", err)
 	}
+	failOnTimeout, err := getBoolParam(s.LState, "fail_on_timeout", 3)
+	if err != nil {
+		return s.CancelErr("error: read_message: %v", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 	msg, err := consumer.ReadMessage(ctx)
 	if err != nil {
-		return s.CancelErr("error: read_message: %v", err)
+		if errors.Is(err, context.DeadlineExceeded) && !failOnTimeout {
+			// Do nothing, we mean not to fail in this case (easiest to represent this way)
+			s.LState.Push(lua.LNil)
+			return 1
+		} else {
+			return s.CancelErr("error: read_message: %v", err)
+		}
 	}
 	ret := &lua.LTable{}
 	ret.RawSetString("key", lua.LString(string(msg.Key)))

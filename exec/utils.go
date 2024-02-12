@@ -51,6 +51,15 @@ func getIntParam(L *lua.LState, paramName string, stackPosition int) (int, error
 	}
 }
 
+func getBoolParam(L *lua.LState, paramName string, stackPosition int) (bool, error) {
+	stackVal := L.Get(stackPosition)
+	if val, ok := stackVal.(lua.LBool); ok {
+		return bool(val), nil
+	} else {
+		return false, fmt.Errorf("error: getBoolParam: expected '%s' parameter to be boolean, instead got '%s'", paramName, stackVal.Type().String())
+	}
+}
+
 func luaTypeToString(val lua.LValue) (string, error) {
 	switch val.Type() {
 	case lua.LTString:

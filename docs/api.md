@@ -44,23 +44,25 @@ print_response(response)
 
 ## `sqump_kafka`
 ```
-new_consumer(brokers, group, topic, options) -> consumer
+new_consumer(brokers, group, topic, offset) -> consumer
     Parameters:
         brokers - table, an array of string addresses for the consumer to connect to
         group   - string, the group ID of the consumer
         topic   - string, the topic to consume from
-        options - optional table, with the below fields:
-            offset_last - string, if set to "true" will override Kafka consumer group to default to last offset on creation
+        offset  - string, either "first" or "last", specifying the offset to initialize a new consumer group to
     Returns:
         consumer - metatable, a custom type representing the connection handle of the consumer connection
 
-consumer:read_message(timeout) -> message
+consumer:read_message(timeout, fail_on_timeout) -> message
     Parameters:
-        timeout - number, an integer representing the timeout for the read in seconds
+        timeout         - number, an integer representing the timeout for the read in seconds
+        fail_on_timeout - boolean, determining whether the the script should fail on read timeout
     Returns:
-        message - table, containing:
+        message - table (or nil on timeout set to not fail), containing:
             key  - string, the key of the Kafka message
             data - string, the value of the Kafka message
+    Notes:
+        Specifying a read that does not fail on timeout can be helpful for reading to the current end of the topic and then taking action.
 
 consumer:close()
     Note: It is the responsibility of the user to call this message when done reading from the consumer
