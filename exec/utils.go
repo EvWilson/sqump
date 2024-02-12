@@ -29,19 +29,6 @@ func getStringArrayParam(L *lua.LState, paramName string, stackPosition int) ([]
 	return ret, nil
 }
 
-func getMapParamWithDefault(L *lua.LState, paramName string, stackPosition int, def map[string]string) map[string]string {
-	stackVal := L.Get(stackPosition)
-	if stackVal.Type() != lua.LTTable {
-		return def
-	}
-	arr := stackVal.(*lua.LTable)
-	ret := make(map[string]string, arr.Len())
-	arr.ForEach(func(l1, l2 lua.LValue) {
-		ret[l1.String()] = l2.String()
-	})
-	return ret
-}
-
 func getIntParam(L *lua.LState, paramName string, stackPosition int) (int, error) {
 	stackVal := L.Get(stackPosition)
 	if val, ok := stackVal.(lua.LNumber); ok {

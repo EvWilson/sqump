@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"reflect"
@@ -69,13 +70,13 @@ func (s *State) registerKafkaModule(L *lua.LState) {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
 			"new_consumer":    s.newConsumer,
 			"new_producer":    s.newProducer,
+			"random_group_id": s.randomGroupID,
 			"provision_topic": s.provisionTopic,
 		})
 		L.Push(mod)
 		return 1
 	})
 }
-
 func (s *State) newConsumer(_ *lua.LState) int {
 	brokers, err := getStringArrayParam(s.LState, "brokers", 1)
 	if err != nil {
@@ -242,6 +243,11 @@ func (s *State) producerClose(_ *lua.LState) int {
 		return s.CancelErr("error: producer:close: %v", err)
 	}
 	return 0
+}
+
+func (s *State) randomGroupID(_ *lua.LState) int {
+	s.LState.Push(lua.LString(fmt.Sprintf("sqump-%d", rand.Int63())))
+	return 1
 }
 
 func (s *State) provisionTopic(_ *lua.LState) int {

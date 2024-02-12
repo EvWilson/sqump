@@ -53,7 +53,7 @@
         "local topic = 'weights'",
         "",
         "math.randomseed(os.time())",
-        "local c = k.new_consumer(brokers, string.format(\"group-%d\", math.random(1, 1000)), topic, 'first')",
+        "local c = k.new_consumer(brokers, k.random_group_id(), topic, 'first')",
         "",
         "local sum, count = 0, 0",
         "while true do",

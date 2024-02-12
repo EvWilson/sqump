@@ -83,6 +83,10 @@ producer:write(key, data)
 producer:close()
     Note: It is the responsibility of the user to call this message when done writing to the producer
 
+random_group_id() -> group_id
+    Returns:
+        group_id - string, random group ID, though not strictly guaranteed to be unique (should be in practice)
+
 provision_topic(brokers, topic)
     Parameters:
         brokers - table, an array of string addresses for the consumer to connect to
