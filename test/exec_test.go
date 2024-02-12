@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/exec"
+	"github.com/EvWilson/sqump/prnt"
 	"github.com/EvWilson/sqump/test/example"
 )
 
 func TestExample(t *testing.T) {
-	core.SetPrinter(&core.StandardPrinter{})
+	prnt.SetPrinter(&prnt.StandardPrinter{})
 
 	mux := example.MakeMux()
 	go func() {
@@ -37,7 +39,7 @@ func TestExample(t *testing.T) {
 	t.Run("Basic", func(t *testing.T) {
 		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
 
-		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
+		conf, err := data.ReadConfigFrom(tmpConf.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,11 +48,11 @@ func TestExample(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
+		sq, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = sq.ExecuteRequest(conf, "A", make(core.LoopChecker), make(core.EnvMapValue))
+		_, err = exec.ExecuteRequest(sq, "A", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -58,15 +60,15 @@ func TestExample(t *testing.T) {
 
 	t.Run("Chained, gets result", func(t *testing.T) {
 		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
-		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
+		conf, err := data.ReadConfigFrom(tmpConf.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
+		sq, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = sq.ExecuteRequest(conf, "B", make(core.LoopChecker), make(core.EnvMapValue))
+		_, err = exec.ExecuteRequest(sq, "B", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -74,17 +76,17 @@ func TestExample(t *testing.T) {
 
 	t.Run("Multiple override sets and sources", func(t *testing.T) {
 		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_multi_env_squmpfile.json")
-		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
+		conf, err := data.ReadConfigFrom(tmpConf.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
+		sq, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = sq.ExecuteRequest(conf, "A", make(core.LoopChecker), core.EnvMapValue{
+		_, err = exec.ExecuteRequest(sq, "A", conf, data.EnvMapValue{
 			"two": "2",
-		})
+		}, make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -92,15 +94,15 @@ func TestExample(t *testing.T) {
 
 	t.Run("Test JSON drilling", func(t *testing.T) {
 		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
-		conf, err := core.ReadConfigFrom(tmpConf.F.Name())
+		conf, err := data.ReadConfigFrom(tmpConf.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		sq, err := core.ReadSqumpfile(tmpFile.F.Name())
+		sq, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = sq.ExecuteRequest(conf, "C", make(core.LoopChecker), make(core.EnvMapValue))
+		_, err = exec.ExecuteRequest(sq, "C", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}

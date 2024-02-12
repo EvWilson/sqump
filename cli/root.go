@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/EvWilson/sqump/cli/cmder"
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 )
 
 func BuildRoot() *cmder.Root {
@@ -23,9 +23,9 @@ func BuildRoot() *cmder.Root {
 		cmder.NewOp(
 			"init",
 			"init",
-			"Create a new default squmpfile in the current directory",
+			"Create a new default collection in the current directory",
 			func(_ context.Context, args []string) error {
-				return core.WriteDefaultSqumpfile()
+				return data.WriteDefaultCollection()
 			},
 		),
 		WebOperation(),

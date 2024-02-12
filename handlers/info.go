@@ -3,11 +3,11 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 )
 
 func PrintCoreInfo() error {
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return fmt.Errorf("error reading config: %v", err)
 	}
@@ -16,16 +16,16 @@ func PrintCoreInfo() error {
 }
 
 func PrintFileInfo(fpath string) error {
-	sq, err := core.ReadSqumpfile(fpath)
+	c, err := data.ReadCollection(fpath)
 	if err != nil {
-		return fmt.Errorf("error reading squmpfile at %s: %v\n", fpath, err)
+		return fmt.Errorf("error reading collection at %s: %v\n", fpath, err)
 	}
-	sq.PrintInfo()
+	c.PrintInfo()
 	return nil
 }
 
 func ListCollections() ([]string, error) {
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return nil, err
 	}

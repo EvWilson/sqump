@@ -1,4 +1,4 @@
-package core
+package data
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/EvWilson/sqump/prnt"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -29,14 +30,14 @@ func EditBuffer(
 	defer func(file *os.File) {
 		err = file.Close()
 		if err != nil {
-			Printf("error closing file '%s': %v\n", file.Name(), err)
+			prnt.Printf("error closing file '%s': %v\n", file.Name(), err)
 			return
 		}
 	}(f)
 	defer func(filename string) {
 		err = os.Remove(filename)
 		if err != nil {
-			Printf("error removing tmpfile '%s': %v\n", filename, err)
+			prnt.Printf("error removing tmpfile '%s': %v\n", filename, err)
 			return
 		}
 	}(f.Name())

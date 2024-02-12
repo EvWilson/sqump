@@ -1,18 +1,21 @@
 package handlers
 
-import "github.com/EvWilson/sqump/core"
+import (
+	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/exec"
+)
 
-func ExecuteRequest(fpath, requestName string, overrides core.EnvMapValue) error {
-	var sqFile *core.Squmpfile
-	sqFile, err := core.ReadSqumpfile(fpath)
+func ExecuteRequest(fpath, requestName string, overrides data.EnvMapValue) error {
+	var coll *data.Collection
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
 	}
-	var conf *core.Config
-	conf, err = core.ReadConfigFrom(core.DefaultConfigLocation())
+	var conf *data.Config
+	conf, err = data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
-	_, err = sqFile.ExecuteRequest(conf, requestName, make(core.LoopChecker), overrides)
+	_, err = exec.ExecuteRequest(coll, requestName, conf, overrides, make(exec.LoopChecker))
 	return err
 }

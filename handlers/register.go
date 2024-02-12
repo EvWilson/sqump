@@ -4,7 +4,8 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/prnt"
 )
 
 func Autoregister(cwd string) error {
@@ -22,18 +23,18 @@ func Autoregister(cwd string) error {
 	if err != nil {
 		return err
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
-	for _, squmpfile := range found {
-		ok, err := conf.CheckForRegisteredFile(squmpfile)
+	for _, collection := range found {
+		ok, err := conf.CheckForRegisteredFile(collection)
 		if err != nil {
 			return err
 		}
 		if !ok {
-			core.Printf("registering '%s'\n", squmpfile)
-			err = conf.Register(squmpfile)
+			prnt.Printf("registering '%s'\n", collection)
+			err = conf.Register(collection)
 			if err != nil {
 				return err
 			}
@@ -47,7 +48,7 @@ func Register(fpath string) error {
 	if err != nil {
 		return err
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
@@ -59,7 +60,7 @@ func Unregister(fpath string) error {
 	if err != nil {
 		return err
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}

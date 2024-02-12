@@ -2,7 +2,7 @@
 {{define "main"}}
 <a href="/">&lt;&lt; Home</a>
 
-<h3>{{.Title}}</h3>
+<h3>{{.Name}}</h3>
 
 <div class="flex-container">
 	<div class="flex-smaller">
@@ -10,17 +10,17 @@
 		<ul>
 			{{range .Requests}}
 			<li>
-				<a href="/collection/{{$.EscapedPath}}/request/{{.Title}}">{{.Title}}</a>
+				<a href="/collection/{{$.EscapedPath}}/request/{{.Name}}">{{.Name}}</a>
 				<span class="fade">
-					- <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Title}}/rename">Rename</a>
-					- <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Title}}/delete">Delete</a>
+					- <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Name}}/rename">Rename</a>
+					- <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Name}}/delete">Delete</a>
 				</span>
 			</li>
 			{{end}}
 		</ul>
 		<form action="/collection/{{.EscapedPath}}/request/create/new" method="POST">
 			<span>Create new request:</span>
-			<input type="text" name="title" />
+			<input type="text" name="name" />
 			<input type="submit" value="Submit" />
 		</form>
 	</div>

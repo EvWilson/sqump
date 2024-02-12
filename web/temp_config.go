@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 )
 
 type TempConfig struct {
-	core.EnvMap
+	data.EnvMap
 	sync.RWMutex
 }
 
@@ -25,7 +25,7 @@ func saveTempConfig(req *http.Request) error {
 	return nil
 }
 
-func getTempConfig() core.EnvMap {
+func getTempConfig() data.EnvMap {
 	tempConfig.RLock()
 	defer tempConfig.RUnlock()
 	return tempConfig.EnvMap.DeepCopy()

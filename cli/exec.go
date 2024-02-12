@@ -6,15 +6,17 @@ import (
 	"strings"
 
 	"github.com/EvWilson/sqump/cli/cmder"
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/prnt"
+
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
 func ExecOperation() *cmder.Op {
 	return cmder.NewOp(
 		"exec",
-		"exec <squmpfile path> <request title>, or none",
+		"exec <collection path> <request name>, or none",
 		"Executes the given request, or fuzzy searches for one if no args provided",
 		handleExec,
 	)
@@ -36,27 +38,27 @@ func handleExec(ctx context.Context, args []string) error {
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
 	if err != nil {
-		core.Println("error occurred during script execution:")
-		core.Println(err)
+		prnt.Println("error occurred during script execution:")
+		prnt.Println(err)
 	}
 	return nil
 }
 
-func handleExecFuzzy(overrides core.EnvMapValue) error {
+func handleExecFuzzy(overrides data.EnvMapValue) error {
 	options := make([]string, 0)
 
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
 
 	for _, path := range conf.Files {
-		sq, err := core.ReadSqumpfile(path)
+		sq, err := data.ReadCollection(path)
 		if err != nil {
 			return err
 		}
 		for _, req := range sq.Requests {
-			options = append(options, fmt.Sprintf("%s.%s", sq.Title, req.Title))
+			options = append(options, fmt.Sprintf("%s.%s", sq.Name, req.Name))
 		}
 	}
 

@@ -16,26 +16,26 @@ func AddOperation() *cmder.Op {
 		cmder.NewNoopHandler("add"),
 		cmder.NewOp(
 			"file",
-			"add file <squmpfile title>",
-			"Create a new squmpfile and register it in your config",
+			"add file <collection name>",
+			"Create a new collection and register it in your config",
 			func(_ context.Context, args []string) error {
 				if len(args) != 1 {
 					return fmt.Errorf("expected 1 arg in `add file`, got: %d", len(args))
 				}
-				title := args[0]
-				return handlers.AddFile(title)
+				name := args[0]
+				return handlers.AddFile(name)
 			},
 		),
 		cmder.NewOp(
 			"req",
-			"add req <squmpfile path> <title>",
-			"Add a new request with the given title to the given squmpfile",
+			"add req <collection path> <name>",
+			"Add a new request with the given name to the given collection",
 			func(_ context.Context, args []string) error {
 				if len(args) != 2 {
 					return fmt.Errorf("expected 2 args in `add req`, got: %d", len(args))
 				}
-				fpath, reqTitle := args[0], args[1]
-				return handlers.AddRequest(fpath, reqTitle)
+				fpath, reqName := args[0], args[1]
+				return handlers.AddRequest(fpath, reqName)
 			},
 		),
 	)

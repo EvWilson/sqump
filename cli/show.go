@@ -6,15 +6,16 @@ import (
 	"strings"
 
 	"github.com/EvWilson/sqump/cli/cmder"
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/prnt"
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
 func ShowOperation() *cmder.Op {
 	return cmder.NewOp(
 		"show",
-		"show <squmpfile path> <request title>, or none",
+		"show <collection path> <request name>, or none",
 		"Shows the given request script with substitutions made, or fuzzy searches for one if no args provided",
 		handleShow,
 	)
@@ -32,8 +33,8 @@ func handleShow(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		core.Println("Prepared script:")
-		core.Println(prepared)
+		prnt.Println("Prepared script:")
+		prnt.Println(prepared)
 		return nil
 	case 2:
 		filepath, requestName := args[0], args[1]
@@ -41,29 +42,29 @@ func handleShow(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		core.Println("Prepared script:")
-		core.Println(prepared)
+		prnt.Println("Prepared script:")
+		prnt.Println(prepared)
 		return nil
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
 }
 
-func handleShowFuzzy(overrides core.EnvMapValue) (string, string, error) {
+func handleShowFuzzy(overrides data.EnvMapValue) (string, string, error) {
 	options := make([]string, 0)
 
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return "", "", err
 	}
 
 	for _, path := range conf.Files {
-		sq, err := core.ReadSqumpfile(path)
+		sq, err := data.ReadCollection(path)
 		if err != nil {
 			return "", "", err
 		}
 		for _, req := range sq.Requests {
-			options = append(options, fmt.Sprintf("%s.%s", sq.Title, req.Title))
+			options = append(options, fmt.Sprintf("%s.%s", sq.Name, req.Name))
 		}
 	}
 

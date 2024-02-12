@@ -1,4 +1,4 @@
-package core
+package data
 
 import (
 	"encoding/json"
@@ -7,22 +7,24 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+
+	"github.com/EvWilson/sqump/prnt"
 )
 
 const defaultPerms = 0644
 
 var CurrentVersion = NewSemVer(0, 1, 0)
 
-type Squmpfile struct {
+type Collection struct {
 	Path        string    `json:"-"`
 	Version     SemVer    `json:"version"`
-	Title       string    `json:"title"`
+	Name        string    `json:"name"`
 	Requests    []Request `json:"requests"`
 	Environment EnvMap    `json:"environment"`
 }
 
 type Request struct {
-	Title  string `json:"title"`
+	Name   string `json:"name"`
 	Script Script `json:"script"`
 }
 
@@ -41,9 +43,9 @@ func ScriptFromString(s string) Script {
 	return split
 }
 
-func NewRequest(title string) *Request {
+func NewRequest(name string) *Request {
 	return &Request{
-		Title:  title,
+		Name:   name,
 		Script: Script{"print('hello world!')"},
 	}
 }
@@ -86,15 +88,15 @@ func (emv EnvMapValue) validate() error {
 }
 
 func (e EnvMap) PrintInfo() {
-	Println("Environment:")
+	prnt.Println("Environment:")
 	if len(e) == 0 {
-		Println("  <none>")
+		prnt.Println("  <none>")
 		return
 	}
 	for env, vars := range e {
-		Printf("  %s\n", env)
+		prnt.Printf("  %s\n", env)
 		for k, v := range vars {
-			Printf("    %s: %s\n", k, v)
+			prnt.Printf("    %s: %s\n", k, v)
 		}
 	}
 }
@@ -121,11 +123,11 @@ func (s SemVer) GreaterThan(other SemVer) bool {
 	return s.Major > other.Major || s.Minor > other.Minor || s.Patch > other.Patch
 }
 
-func DefaultSqumpFile() Squmpfile {
-	return Squmpfile{
+func DefaultCollection() Collection {
+	return Collection{
 		Path:     "Squmpfile.json",
 		Version:  CurrentVersion,
-		Title:    "My_New_Squmpfile",
+		Name:     "My_New_Collection",
 		Requests: []Request{*NewRequest("NewReq")},
 		Environment: EnvMap{
 			"staging": {
@@ -147,30 +149,30 @@ func (e ErrNotFound) Is(target error) bool {
 	return reflect.TypeOf(target) == reflect.TypeOf(ErrNotFound{})
 }
 
-func (s *Squmpfile) Flush() error {
-	err := s.validate()
+func (c *Collection) Flush() error {
+	err := c.validate()
 	if err != nil {
 		return err
 	}
-	b, err := json.MarshalIndent(s, "", "  ")
+	b, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.Path, b, defaultPerms)
+	return os.WriteFile(c.Path, b, defaultPerms)
 }
 
-func ReadSqumpfile(path string) (*Squmpfile, error) {
+func ReadCollection(path string) (*Collection, error) {
 	b, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return nil, ErrNotFound{
-			MissingItem: "Squmpfile",
+			MissingItem: "collection",
 			Location:    path,
 		}
 	} else if err != nil {
 		return nil, err
 	}
 
-	var s Squmpfile
+	var s Collection
 	err = json.Unmarshal(b, &s)
 	if err != nil {
 		return nil, err
@@ -180,98 +182,48 @@ func ReadSqumpfile(path string) (*Squmpfile, error) {
 	return &s, nil
 }
 
-func WriteDefaultSqumpfile() error {
-	sf := DefaultSqumpFile()
+func WriteDefaultCollection() error {
+	sf := DefaultCollection()
 	return sf.Flush()
 }
 
-func (s *Squmpfile) ExecuteRequest(
-	conf *Config,
-	reqName string,
-	loopCheck LoopChecker,
-	overrides EnvMapValue,
-) (*State, error) {
-	req, ok := s.GetRequest(reqName)
-	if !ok {
-		return nil, ErrNotFound{
-			MissingItem: "request",
-			Location:    reqName,
-		}
-	}
-
-	return ExecuteRequest(
-		conf,
-		Identifier{
-			Path:      s.Path,
-			Squmpfile: s.Title,
-			Request:   reqName,
-		},
-		req.Script.String(),
-		s.Environment,
-		overrides,
-		loopCheck,
-	)
-}
-
-func (s *Squmpfile) PrepareScript(conf *Config, reqName string, overrides EnvMapValue) (string, map[string]string, error) {
-	req, ok := s.GetRequest(reqName)
-	if !ok {
-		return "", nil, ErrNotFound{
-			MissingItem: "request",
-			Location:    reqName,
-		}
-	}
-
-	return PrepareScript(
-		conf,
-		Identifier{
-			Path:      s.Path,
-			Squmpfile: s.Title,
-			Request:   reqName,
-		},
-		req.Script.String(),
-		s.Environment,
-		overrides,
-	)
-}
-
-func (s *Squmpfile) GetRequest(req string) (*Request, bool) {
-	for _, r := range s.Requests {
-		if r.Title == req {
+func (c *Collection) GetRequest(req string) (*Request, bool) {
+	for _, r := range c.Requests {
+		if r.Name == req {
 			return &r, true
 		}
 	}
 	return nil, false
 }
 
-func (s *Squmpfile) RemoveRequest(title string) error {
-	for i, r := range s.Requests {
-		if r.Title == title {
-			s.Requests = append(s.Requests[:i], s.Requests[i+1:]...)
-			return s.Flush()
+func (c *Collection) RemoveRequest(name string) error {
+	for i, r := range c.Requests {
+		if r.Name == name {
+			c.Requests = append(c.Requests[:i], c.Requests[i+1:]...)
+			return c.Flush()
 		}
 	}
-	return fmt.Errorf("no request titled '%s' found in squmpfile '%s'", title, s.Title)
+	return fmt.Errorf("no request named '%s' found in collection '%s'", name, c.Name)
 }
 
-func (s *Squmpfile) UpsertRequest(req *Request) *Squmpfile {
+func (c *Collection) UpsertRequest(req *Request) *Collection {
 	found := false
-	for i, r := range s.Requests {
-		if r.Title == req.Title {
-			s.Requests[i] = *req
+	for i, r := range c.Requests {
+		if r.Name == req.Name {
+			c.Requests[i] = *req
 			found = true
 		}
 	}
 	if !found {
-		s.Requests = append(s.Requests, *req)
+		c.Requests = append(c.Requests, *req)
 	}
-	return s
+	return c
 }
 
-func (s *Squmpfile) EditRequest(reqName string) error {
-	path := s.Path
+func (c *Collection) EditRequest(reqName string) error {
+	path := c.Path
 	cb := func(b []byte) error {
-		sq, err := ReadSqumpfile(path)
+		sq, err := ReadCollection(path)
 		if err != nil {
 			return err
 		}
@@ -279,21 +231,21 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 		if !ok {
 			return ErrNotFound{
 				MissingItem: reqName,
-				Location:    sq.Title,
+				Location:    sq.Name,
 			}
 		}
 		req.Script = ScriptFromString(strings.TrimSpace(string(b)))
 		return sq.UpsertRequest(req).Flush()
 	}
 
-	req, ok := s.GetRequest(reqName)
+	req, ok := c.GetRequest(reqName)
 	if !ok {
 		return ErrNotFound{
 			MissingItem: reqName,
-			Location:    s.Title,
+			Location:    c.Name,
 		}
 	}
-	b, err := EditBuffer([]byte(req.Script.String()), fmt.Sprintf("%s-%s-*.lua", s.Title, reqName), cb)
+	b, err := EditBuffer([]byte(req.Script.String()), fmt.Sprintf("%s-%s-*.lua", c.Name, reqName), cb)
 	if err != nil {
 		return err
 	}
@@ -301,10 +253,10 @@ func (s *Squmpfile) EditRequest(reqName string) error {
 	return cb(b)
 }
 
-func (s *Squmpfile) EditEnv() error {
-	path := s.Path
+func (c *Collection) EditEnv() error {
+	path := c.Path
 	cb := func(b []byte) error {
-		sq, err := ReadSqumpfile(path)
+		sq, err := ReadCollection(path)
 		if err != nil {
 			return err
 		}
@@ -318,12 +270,12 @@ func (s *Squmpfile) EditEnv() error {
 		return sq.Flush()
 	}
 
-	envBytes, err := json.MarshalIndent(s.Environment, "", "  ")
+	envBytes, err := json.MarshalIndent(c.Environment, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	basename := filepath.Base(s.Title)
+	basename := filepath.Base(c.Name)
 	b, err := EditBuffer(envBytes, fmt.Sprintf("%s-config-*.json", basename), cb)
 	if err != nil {
 		return err
@@ -332,19 +284,19 @@ func (s *Squmpfile) EditEnv() error {
 	return cb(b)
 }
 
-func (s *Squmpfile) EditTitle() error {
-	path := s.Path
+func (c *Collection) EditName() error {
+	path := c.Path
 	cb := func(b []byte) error {
-		sq, err := ReadSqumpfile(path)
+		sq, err := ReadCollection(path)
 		if err != nil {
 			return err
 		}
-		sq.Title = strings.TrimSpace(string(b))
+		sq.Name = strings.TrimSpace(string(b))
 		return sq.Flush()
 	}
 
-	basename := filepath.Base(s.Title)
-	b, err := EditBuffer([]byte(s.Title), fmt.Sprintf("%s-title-*.json", basename), cb)
+	basename := filepath.Base(c.Name)
+	b, err := EditBuffer([]byte(c.Name), fmt.Sprintf("%s-name-*.json", basename), cb)
 	if err != nil {
 		return err
 	}
@@ -352,38 +304,38 @@ func (s *Squmpfile) EditTitle() error {
 	return cb(b)
 }
 
-func (s *Squmpfile) validate() error {
-	if err := s.Environment.validate(); err != nil {
+func (c *Collection) validate() error {
+	if err := c.Environment.validate(); err != nil {
 		return err
 	}
-	if strings.Contains(s.Title, ".") {
-		return fmt.Errorf("Illegal character '.' detected in squmpfile title: '%s'", s.Title)
+	if strings.Contains(c.Name, ".") {
+		return fmt.Errorf("Illegal character '.' detected in collection name '%s'", c.Name)
 	}
-	reqTitles := make(map[string]bool, len(s.Requests))
-	for _, req := range s.Requests {
-		if strings.Contains(req.Title, ".") {
-			return fmt.Errorf("Illegal character '.' detected in request title: '%s'", req.Title)
+	reqNames := make(map[string]bool, len(c.Requests))
+	for _, req := range c.Requests {
+		if strings.Contains(req.Name, ".") {
+			return fmt.Errorf("Illegal character '.' detected in request name '%s'", req.Name)
 		}
-		if _, ok := reqTitles[req.Title]; ok {
-			return fmt.Errorf("duplicate request title '%s'", req.Title)
+		if _, ok := reqNames[req.Name]; ok {
+			return fmt.Errorf("duplicate request name '%s'", req.Name)
 		} else {
-			reqTitles[req.Title] = true
+			reqNames[req.Name] = true
 		}
 	}
 	return nil
 }
 
-func (s *Squmpfile) SetEnvVar(env, key, val string) {
-	if s.Environment == nil {
-		s.Environment = make(EnvMap)
+func (c *Collection) SetEnvVar(env, key, val string) {
+	if c.Environment == nil {
+		c.Environment = make(EnvMap)
 	}
-	if s.Environment[env] == nil {
-		s.Environment[env] = make(map[string]string)
+	if c.Environment[env] == nil {
+		c.Environment[env] = make(map[string]string)
 	}
-	s.Environment[env][key] = val
+	c.Environment[env][key] = val
 }
 
-func (s *Squmpfile) PrintInfo() {
+func (c *Collection) PrintInfo() {
 	strOrNone := func(s string) string {
 		if s == "" {
 			return "<none>"
@@ -391,11 +343,11 @@ func (s *Squmpfile) PrintInfo() {
 		return s
 	}
 
-	Println("Title:", strOrNone(s.Title))
-	Println("Version:", strOrNone(s.Version.String()))
-	Println("Requests:")
-	for _, req := range s.Requests {
-		Printf("  %s\n", strOrNone(req.Title))
+	prnt.Println("Name:", strOrNone(c.Name))
+	prnt.Println("Version:", strOrNone(c.Version.String()))
+	prnt.Println("Requests:")
+	for _, req := range c.Requests {
+		prnt.Printf("  %s\n", strOrNone(req.Name))
 	}
-	s.Environment.PrintInfo()
+	c.Environment.PrintInfo()
 }

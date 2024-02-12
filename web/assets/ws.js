@@ -32,24 +32,24 @@ ws.onerror = (error) => {
 	console.log(`[error] error=${JSON.stringify(error)}`)
 }
 
-const viewRequest = (path, title, scope, environment) => {
+const viewRequest = (path, name, scope, environment) => {
 	ws.send(JSON.stringify({
 		command: "view",
 		payload: {
 			path: path,
-			title: title,
+			name: name,
 			scope: scope,
 			environment: environment,
 		}
 	}))
 }
 
-const execRequest = (path, title, scope, environment) => {
+const execRequest = (path, name, scope, environment) => {
 	ws.send(JSON.stringify({
 		command: "exec",
 		payload: {
 			path: path,
-			title: title,
+			name: name,
 			scope: scope,
 			environment: environment,
 		}

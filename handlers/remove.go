@@ -3,15 +3,15 @@ package handlers
 import (
 	"os"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 )
 
-func RemoveRequest(fpath, requestTitle string) error {
-	sq, err := core.ReadSqumpfile(fpath)
+func RemoveRequest(fpath, requestName string) error {
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
 	}
-	return sq.RemoveRequest(requestTitle)
+	return coll.RemoveRequest(requestName)
 }
 
 func RemoveCollection(fpath string) error {

@@ -7,14 +7,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -31,29 +31,29 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 	}
 	type fileInfo struct {
 		EscapedPath string
-		Title       string
-		Requests    []core.Request
+		Name        string
+		Requests    []data.Request
 	}
 	info := make([]fileInfo, 0, len(files))
 	for _, path := range files {
-		sq, err := core.ReadSqumpfile(path)
+		sq, err := data.ReadCollection(path)
 		if err != nil {
 			r.ServerError(w, err)
 			return
 		}
 		info = append(info, fileInfo{
 			EscapedPath: url.PathEscape(strings.TrimPrefix(path, "/")),
-			Title:       sq.Title,
+			Name:        sq.Name,
 			Requests:    sq.Requests,
 		})
 	}
 	r.Render(w, 200, "home.tmpl.html", struct {
-		BaseEnvironmentText string
+		CoreEnvironmentText string
 		CurrentEnvironment  string
 		Files               []fileInfo
 		Error               string
 	}{
-		BaseEnvironmentText: string(envBytes),
+		CoreEnvironmentText: string(envBytes),
 		CurrentEnvironment:  conf.CurrentEnv,
 		Files:               info,
 		Error:               GetError(w, req),
@@ -65,7 +65,7 @@ func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	sq, err := core.ReadSqumpfile(fmt.Sprintf("/%s", path))
+	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -75,20 +75,20 @@ func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
 	r.Render(w, 200, "collection.tmpl.html", struct {
-		Title              string
+		Name               string
 		EscapedPath        string
 		EnvironmentText    string
 		CurrentEnvironment string
-		Requests           []core.Request
+		Requests           []data.Request
 		Error              string
 	}{
-		Title:              sq.Title,
+		Name:               sq.Name,
 		EscapedPath:        url.PathEscape(path),
 		EnvironmentText:    string(envBytes),
 		CurrentEnvironment: conf.CurrentEnv,
@@ -102,22 +102,22 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	title, ok := getParamEscaped(r, w, req, "title")
+	name, ok := getParamEscaped(r, w, req, "name")
 	if !ok {
 		return
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
+	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
 	scope := req.URL.Query().Get("scope")
-	var envMap core.EnvMap
+	var envMap data.EnvMap
 	switch scope {
 	case "":
 		fallthrough
@@ -139,15 +139,15 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	request, ok := sq.GetRequest(title)
+	request, ok := sq.GetRequest(name)
 	if !ok {
-		r.ServerError(w, fmt.Errorf("no request '%s' found in squmpfile '%s'", title, sq.Title))
+		r.ServerError(w, fmt.Errorf("no request '%s' found in collection '%s'", name, sq.Name))
 		return
 	}
 	r.Render(w, 200, "request.tmpl.html", struct {
 		EscapedPath        string
-		CollectionTitle    string
-		Title              string
+		CollectionName     string
+		Name               string
 		EditText           string
 		EnvironmentText    string
 		CurrentEnvironment string
@@ -156,8 +156,8 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		Error              string
 	}{
 		EscapedPath:        url.PathEscape(path),
-		CollectionTitle:    sq.Title,
-		Title:              title,
+		CollectionName:     sq.Name,
+		Name:               name,
 		EditText:           request.Script.String(),
 		EnvironmentText:    string(envBytes),
 		CurrentEnvironment: conf.CurrentEnv,
@@ -172,18 +172,18 @@ func (r *Router) showRenameCollection(w http.ResponseWriter, req *http.Request) 
 	if !ok {
 		return
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
+	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
 	r.Render(w, 200, "renameCollection.tmpl.html", struct {
 		EscapedPath string
-		Title       string
+		Name        string
 		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
-		Title:       sq.Title,
+		Name:        sq.Name,
 		Error:       GetError(w, req),
 	})
 }
@@ -193,18 +193,18 @@ func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Reque
 	if !ok {
 		return
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
+	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
 	r.Render(w, 200, "unregister.tmpl.html", struct {
 		EscapedPath string
-		Title       string
+		Name        string
 		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
-		Title:       sq.Title,
+		Name:        sq.Name,
 		Error:       GetError(w, req),
 	})
 }
@@ -214,18 +214,18 @@ func (r *Router) showDeleteCollection(w http.ResponseWriter, req *http.Request) 
 	if !ok {
 		return
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
+	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
 	r.Render(w, 200, "deleteCollection.tmpl.html", struct {
 		EscapedPath string
-		Title       string
+		Name        string
 		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
-		Title:       sq.Title,
+		Name:        sq.Name,
 		Error:       GetError(w, req),
 	})
 }
@@ -235,25 +235,25 @@ func (r *Router) showRenameRequest(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	title, ok := getParamEscaped(r, w, req, "title")
+	name, ok := getParamEscaped(r, w, req, "name")
 	if !ok {
 		return
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
+	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
 	r.Render(w, 200, "renameRequest.tmpl.html", struct {
-		EscapedPath     string
-		CollectionTitle string
-		RequestTitle    string
-		Error           string
+		EscapedPath    string
+		CollectionName string
+		RequestName    string
+		Error          string
 	}{
-		EscapedPath:     url.PathEscape(path),
-		CollectionTitle: sq.Title,
-		RequestTitle:    title,
-		Error:           GetError(w, req),
+		EscapedPath:    url.PathEscape(path),
+		CollectionName: sq.Name,
+		RequestName:    name,
+		Error:          GetError(w, req),
 	})
 }
 
@@ -262,26 +262,26 @@ func (r *Router) showDeleteRequest(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	title, ok := getParamEscaped(r, w, req, "title")
+	name, ok := getParamEscaped(r, w, req, "name")
 	if !ok {
 		return
 	}
-	sq, err := core.ReadSqumpfile("/" + path)
+	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
 	r.Render(w, 200, "deleteRequest.tmpl.html", struct {
-		EscapedPath     string
-		CollectionTitle string
-		RequestTitle    string
-		Previous        string
-		Error           string
+		EscapedPath    string
+		CollectionName string
+		RequestName    string
+		Previous       string
+		Error          string
 	}{
-		EscapedPath:     url.PathEscape(path),
-		CollectionTitle: sq.Title,
-		RequestTitle:    title,
-		Error:           GetError(w, req),
+		EscapedPath:    url.PathEscape(path),
+		CollectionName: sq.Name,
+		RequestName:    name,
+		Error:          GetError(w, req),
 	})
 }
 

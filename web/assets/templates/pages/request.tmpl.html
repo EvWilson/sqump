@@ -5,17 +5,17 @@
 	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}">&lt;&lt; Back to Collection</a></div>
 </div>
 
-<h3>{{.CollectionTitle}} - {{.Title}}</h3>
+<h3>{{.CollectionName}} - {{.Name}}</h3>
 
 <div class="flex-container">
 	<div class="flex-bigger">
 		<h3>Edit</h3>
-		<form action="/collection/{{.EscapedPath}}/request/{{.Title}}/edit-script" method="POST">
+		<form action="/collection/{{.EscapedPath}}/request/{{.Name}}/edit-script" method="POST">
 			<textarea id="lua-editarea" name="edit" hidden>{{.EditText}}</textarea>
 			<div id="lua-editor" class="half"></div>
 			<input id="lua-submit" type="submit" value="Save">
-			<button id="lua-exec" type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
-			<button id="lua-view" type="button" onclick="viewRequest('{{.EscapedPath}}', '{{.Title}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
+			<button id="lua-exec" type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
+			<button id="lua-view" type="button" onclick="viewRequest('{{.EscapedPath}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
 		</form>
 	</div>
 	<div class="flex-smaller">
@@ -28,7 +28,7 @@
 		<form action="/collection/{{.EscapedPath}}/config" method="POST">
 			<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
 			<div id="json-editor" class="half"></div>
-			<input type="hidden" name="title" value="{{.Title}}" />
+			<input type="hidden" name="name" value="{{.Name}}" />
 			<label for="scope">Scope:</label>
 			<select id="scope" name="scope" onchange="loadScope(value)">
 				<option value="collection">Collection</option>

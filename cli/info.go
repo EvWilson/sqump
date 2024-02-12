@@ -11,7 +11,7 @@ import (
 func InfoOperation() *cmder.Op {
 	return cmder.NewOp(
 		"info",
-		"info <'core' or squmpfile path>",
+		"info <'core' or collection path>",
 		"Print basic information about the requested resource",
 		cmder.NewNoopHandler("info"),
 		cmder.NewOp(
@@ -24,8 +24,8 @@ func InfoOperation() *cmder.Op {
 		),
 		cmder.NewOp(
 			"file",
-			"info file <squmpfile path>",
-			"Print basic information about the given squmpfile",
+			"info file <collection path>",
+			"Print basic information about the given collection",
 			func(_ context.Context, args []string) error {
 				if len(args) != 1 {
 					return fmt.Errorf("expected 1 argument to `info file`, got: %d", len(args))

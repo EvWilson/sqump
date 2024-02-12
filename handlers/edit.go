@@ -4,23 +4,23 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 )
 
-func EditSqumpfileEnv(fpath string) error {
-	sq, err := core.ReadSqumpfile(fpath)
+func EditCollectionEnv(fpath string) error {
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
 	}
-	return sq.EditEnv()
+	return coll.EditEnv()
 }
 
 func EditRequest(fpath, requestName string) error {
-	sq, err := core.ReadSqumpfile(fpath)
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
 	}
-	err = sq.EditRequest(requestName)
+	err = coll.EditRequest(requestName)
 	if err != nil {
 		return err
 	}
@@ -28,50 +28,59 @@ func EditRequest(fpath, requestName string) error {
 }
 
 func UpdateCollectionName(fpath, newName string) error {
-	sq, err := core.ReadSqumpfile(fpath)
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
 	}
-	sq.Title = newName
-	return sq.Flush()
+	coll.Name = newName
+	return coll.Flush()
 }
 
 func UpdateRequestName(fpath, oldName, newName string) error {
-	sq, err := core.ReadSqumpfile(fpath)
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
 	}
-	req, ok := sq.GetRequest(oldName)
+	req, ok := coll.GetRequest(oldName)
 	if !ok {
-		return fmt.Errorf("UpdateRequestName: no request '%s' found in collection '%s'", oldName, sq.Title)
+		return fmt.Errorf("UpdateRequestName: no request '%s' found in collection '%s'", oldName, coll.Name)
 	}
-	newReq := core.Request{
-		Title:  newName,
+	newReq := data.Request{
+		Name:   newName,
 		Script: req.Script,
 	}
-	err = sq.RemoveRequest(oldName)
+	err = coll.RemoveRequest(oldName)
 	if err != nil {
 		return err
 	}
-	sq = sq.UpsertRequest(&newReq)
-	return sq.Flush()
+	coll = coll.UpsertRequest(&newReq)
+	return coll.Flush()
 }
 
-func UpdateRequestScript(fpath, requestTitle string, newScript []string) error {
-	sq, err := core.ReadSqumpfile(fpath)
+func UpdateRequestScript(fpath, requestName string, newScript []string) error {
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
 	}
-	req, ok := sq.GetRequest(requestTitle)
+	req, ok := coll.GetRequest(requestName)
 	if !ok {
-		return fmt.Errorf("UpdateRequestScript: no request '%s' found in collection '%s'", requestTitle, sq.Title)
+		return fmt.Errorf("UpdateRequestScript: no request '%s' found in collection '%s'", requestName, coll.Name)
 	}
-	req.Script = core.ScriptFromString(strings.Join(newScript, "\n"))
-	return sq.UpsertRequest(req).Flush()
+	req.Script = data.ScriptFromString(strings.Join(newScript, "\n"))
+	return coll.UpsertRequest(req).Flush()
+}
+
+func SetCurrentEnv(newEnv string) error {
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	if err != nil {
+		return err
+	}
+	conf.CurrentEnv = newEnv
+	return conf.Flush()
 }
 
 func EditConfigEnv(fpath string) error {
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}

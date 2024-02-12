@@ -1,4 +1,4 @@
-package core
+package data
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/EvWilson/sqump/prnt"
 )
 
 // DefaultConfigLocation returns the location of the sqump config file
@@ -100,7 +102,7 @@ func (c *Config) Unregister(path string) error {
 		}
 	}
 
-	return fmt.Errorf("no registered squmpfile found for path '%s'", path)
+	return fmt.Errorf("no registered collection found for path '%s'", path)
 }
 
 func (c *Config) CheckForRegisteredFile(path string) (bool, error) {
@@ -198,17 +200,17 @@ func (c *Config) EditCurrentEnv() error {
 	return cb(b)
 }
 
-func (c *Config) SqumpfileByTitle(title string) (*Squmpfile, error) {
+func (c *Config) CollectionByName(name string) (*Collection, error) {
 	for _, fpath := range c.Files {
-		sq, err := ReadSqumpfile(fpath)
+		sq, err := ReadCollection(fpath)
 		if err != nil {
 			return nil, err
 		}
-		if sq.Title == title {
+		if sq.Name == name {
 			return sq, nil
 		}
 	}
-	return nil, fmt.Errorf("no squmpfile found for title '%s'", title)
+	return nil, fmt.Errorf("no collection found for name '%s'", name)
 }
 
 func (c *Config) PrintInfo() {
@@ -219,15 +221,15 @@ func (c *Config) PrintInfo() {
 		return s
 	}
 
-	Println("Current Env:", strOrNone(c.CurrentEnv))
-	Println("Version:", strOrNone(c.Version.String()))
-	Println("Files:")
+	prnt.Println("Current Env:", strOrNone(c.CurrentEnv))
+	prnt.Println("Version:", strOrNone(c.Version.String()))
+	prnt.Println("Files:")
 	if len(c.Files) == 0 {
-		Println("  <none>")
+		prnt.Println("  <none>")
 		return
 	}
 	for _, fpath := range c.Files {
-		Printf("  %s\n", fpath)
+		prnt.Printf("  %s\n", fpath)
 	}
 	c.Environment.PrintInfo()
 }

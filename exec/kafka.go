@@ -1,4 +1,4 @@
-package core
+package exec
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/EvWilson/sqump/prnt"
 	"github.com/segmentio/kafka-go"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -283,7 +284,7 @@ func NewKafkaPrinter(tag string) (*KafkaPrinter, error) {
 	if err != nil {
 		return nil, err
 	}
-	Printf("%s logging to %s\n", tag, fpath)
+	prnt.Printf("%s logging to %s\n", tag, fpath)
 	return &KafkaPrinter{
 		Tag: tag,
 		f:   f,

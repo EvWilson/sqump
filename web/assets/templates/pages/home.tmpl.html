@@ -7,7 +7,7 @@
 			{{range .Files}}
 			{{$ep := .EscapedPath}}
 			<li>
-				<a href="/collection/{{$ep}}">{{.Title}}</a>
+				<a href="/collection/{{$ep}}">{{.Name}}</a>
 				<span class="fade">
 					- <a class="fade" href="/collection/{{$ep}}/rename">Rename</a>
 					- <a class="fade" href="/collection/{{$ep}}/unregister">Unregister</a>
@@ -16,14 +16,14 @@
 			</li>
 			<ul>
 				{{range .Requests}}
-				<li><a href="/collection/{{$ep}}/request/{{.Title}}">{{.Title}}</a></li>
+				<li><a href="/collection/{{$ep}}/request/{{.Name}}">{{.Name}}</a></li>
 				{{end}}
 			</ul>
 			{{end}}
 		</ul>
 		<form action="/collection/create/new" method="POST">
 			<span>Create new collection:</span>
-			<input type="text" name="title" />
+			<input type="text" name="name" />
 			<input type="submit" value="Submit" />
 		</form>
 		<div>
@@ -38,7 +38,7 @@
 			<input type="submit" value="Submit" />
 		</form>
 		<form action="/config" method="POST">
-			<textarea id="json-editarea" name="config" hidden>{{.BaseEnvironmentText}}</textarea>
+			<textarea id="json-editarea" name="config" hidden>{{.CoreEnvironmentText}}</textarea>
 			<div id="json-editor" class="half"></div>
 			<input type="hidden" name="scope" value="core" />
 			<input type="submit" value="Save">

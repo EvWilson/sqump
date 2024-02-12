@@ -4,10 +4,10 @@
     "minor": 1,
     "patch": 0
   },
-  "title": "A_Basic_Test_Squmpfile",
+  "name": "A_Basic_Test_Squmpfile",
   "requests": [
     {
-      "title": "A",
+      "name": "A",
       "script": [
         "local s = require('sqump')",
         "",
@@ -25,7 +25,7 @@
       ]
     },
     {
-      "title": "B",
+      "name": "B",
       "script": [
         "local s = require('sqump')",
         "",
@@ -46,7 +46,7 @@
       ]
     },
     {
-      "title": "C",
+      "name": "C",
       "script": [
         "local s = require('sqump')",
         "",

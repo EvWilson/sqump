@@ -3,19 +3,20 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/exec"
 )
 
-func GetPreparedScript(fpath, requestName string, overrides core.EnvMapValue) (string, error) {
-	sqFile, err := core.ReadSqumpfile(fpath)
+func GetPreparedScript(fpath, requestName string, overrides data.EnvMapValue) (string, error) {
+	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return "", err
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return "", err
 	}
-	script, _, err := sqFile.PrepareScript(conf, requestName, overrides)
+	script, _, err := exec.PrepareScript(coll, requestName, conf, overrides)
 	if err != nil {
 		return "", fmt.Errorf("error occurred during script preparation: %v", err)
 	}

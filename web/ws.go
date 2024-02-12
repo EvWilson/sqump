@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/prnt"
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
@@ -27,7 +28,7 @@ type Command struct {
 
 type ViewRequestPayload struct {
 	EscapedPath string `json:"path"`
-	Title       string `json:"title"`
+	Name        string `json:"name"`
 	Scope       string `json:"scope"`
 	Environment string `json:"environment"`
 }
@@ -38,7 +39,7 @@ type ViewResponsePayload struct {
 
 type ExecRequestPayload struct {
 	EscapedPath string `json:"path"`
-	Title       string `json:"title"`
+	Name        string `json:"name"`
 	Scope       string `json:"scope"`
 	Environment string `json:"environment"`
 }
@@ -54,7 +55,7 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 		return
 	}
 	r.l.Debug("ws connection opened")
-	core.SetPrinter(core.NewDualWriter(
+	prnt.SetPrinter(prnt.NewDualWriter(
 		func(msg string, args ...any) (int, error) {
 			formatted := fmt.Sprintf(msg, args...)
 			cmd := Command{
@@ -94,7 +95,7 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 	))
 	go func() {
 		defer func() {
-			core.SetPrinter(&core.StandardPrinter{})
+			prnt.SetPrinter(&prnt.StandardPrinter{})
 			err = conn.Close()
 			if err != nil {
 				r.l.Error("error closing connection", "error", err)
@@ -125,12 +126,12 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 			case "view":
 				err = handleViewCommand(conn, cmd.Payload)
 				if err != nil {
-					core.Println("error encountered in view command:", err)
+					prnt.Println("error encountered in view command:", err)
 				}
 			case "exec":
 				err = handleExecCommand(conn, cmd.Payload)
 				if err != nil {
-					core.Println("error encountered in exec command:", err)
+					prnt.Println("error encountered in exec command:", err)
 				}
 			default:
 				r.ServerError(w, fmt.Errorf("unrecognized command: %s\n", cmd.Command))
@@ -141,24 +142,24 @@ func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request
 }
 
 func handleViewCommand(conn net.Conn, payload json.RawMessage) error {
-	var data ViewRequestPayload
-	err := json.Unmarshal(payload, &data)
+	var vrp ViewRequestPayload
+	err := json.Unmarshal(payload, &vrp)
 	if err != nil {
 		return err
 	}
-	path, err := url.PathUnescape(data.EscapedPath)
+	path, err := url.PathUnescape(vrp.EscapedPath)
 	if err != nil {
 		return err
 	}
-	var overrides core.EnvMapValue
-	if data.Scope == "temp" {
+	var overrides data.EnvMapValue
+	if vrp.Scope == "temp" {
 		var ok bool
-		overrides, ok = getTempConfig()[data.Environment]
+		overrides, ok = getTempConfig()[vrp.Environment]
 		if !ok {
-			return fmt.Errorf("no overrides found for environment '%s'", data.Environment)
+			return fmt.Errorf("no overrides found for environment '%s'", vrp.Environment)
 		}
 	}
-	prepared, err := handlers.GetPreparedScript("/"+path, data.Title, overrides)
+	prepared, err := handlers.GetPreparedScript(fmt.Sprintf("/%s", path), vrp.Name, overrides)
 	if err != nil {
 		return err
 	}
@@ -179,24 +180,24 @@ func handleExecCommand(conn net.Conn, payload json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	var data ExecRequestPayload
-	err = json.Unmarshal(payload, &data)
+	var erp ExecRequestPayload
+	err = json.Unmarshal(payload, &erp)
 	if err != nil {
 		return err
 	}
-	path, err := url.PathUnescape(data.EscapedPath)
+	path, err := url.PathUnescape(erp.EscapedPath)
 	if err != nil {
 		return err
 	}
-	var overrides core.EnvMapValue
-	if data.Scope == "temp" {
+	var overrides data.EnvMapValue
+	if erp.Scope == "temp" {
 		var ok bool
-		overrides, ok = getTempConfig()[data.Environment]
+		overrides, ok = getTempConfig()[erp.Environment]
 		if !ok {
-			return fmt.Errorf("no overrides found for environment '%s'", data.Environment)
+			return fmt.Errorf("no overrides found for environment '%s'", erp.Environment)
 		}
 	}
-	err = handlers.ExecuteRequest("/"+path, data.Title, overrides)
+	err = handlers.ExecuteRequest(fmt.Sprintf("/%s", path), erp.Name, overrides)
 	if err != nil {
 		return err
 	}

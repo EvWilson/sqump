@@ -3,14 +3,14 @@
 <div class="flex-container flex-column">
 	<div class="flex-smaller"><a href="/">&lt;&lt; Home</a></div>
 	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}">&lt;&lt; Back to Collection</a></div>
-	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}/request/{{.RequestTitle}}">&lt;&lt; Back to Request</a></div>
+	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}/request/{{.RequestName}}">&lt;&lt; Back to Request</a></div>
 </div>
 
-<h3>Rename request {{.RequestTitle}} from {{.CollectionTitle}}?</h3>
+<h3>Rename request {{.RequestName}} from {{.CollectionName}}?</h3>
 
-<form action="/collection/{{.EscapedPath}}/request/{{.RequestTitle}}/rename" method="POST">
+<form action="/collection/{{.EscapedPath}}/request/{{.RequestName}}/rename" method="POST">
 	<input type="text" name="new-name" />
-	<input type="hidden" name="old-name" value="{{.RequestTitle}}" />
+	<input type="hidden" name="old-name" value="{{.RequestName}}" />
 	<input type="submit" value="Submit" />
 	<button onclick="cancel(event)">Cancel</button>
 </form>

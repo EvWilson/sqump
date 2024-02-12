@@ -1,4 +1,4 @@
-package core
+package exec
 
 import (
 	"bytes"
@@ -12,12 +12,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/prnt"
+
 	lua "github.com/yuin/gopher-lua"
 )
 
 type State struct {
 	*lua.LState
-	config       *Config
+	config       *data.Config
 	exports      ExportMap
 	currentIdent Identifier
 	environment  map[string]string
@@ -27,14 +30,14 @@ type State struct {
 	err          error
 }
 
-type ExportMap map[string]*lua.LTable
-
 type LoopChecker map[string]bool
 
+type ExportMap map[string]*lua.LTable
+
 func CreateState(
-	conf *Config,
+	conf *data.Config,
 	ident Identifier,
-	env EnvMapValue,
+	env data.EnvMapValue,
 	loopCheck LoopChecker,
 ) *State {
 	L := lua.NewState()
@@ -196,11 +199,11 @@ func (s *State) execute(_ *lua.LState) int {
 		return s.CancelErr("error: execute: cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
 	}
 
-	sq, err := ReadSqumpfile(ident.Path)
+	sq, err := data.ReadCollection(ident.Path)
 	if err != nil {
-		return s.CancelErr("error: execute: while reading squmpfile at '%s': %v", ident.Path, err)
+		return s.CancelErr("error: execute: while reading collection at '%s': %v", ident.Path, err)
 	}
-	state, err := sq.ExecuteRequest(s.config, request, s.loopCheck, s.environment)
+	state, err := ExecuteRequest(sq, request, s.config, s.environment, s.loopCheck)
 	if err != nil {
 		return s.CancelErr("error: execute: while performing request '%s': %v", request, err)
 	}
@@ -267,12 +270,12 @@ func (s *State) printResponse(_ *lua.LState) int {
 		body = buf.String()
 	}
 
-	Printf("Status Code: %d\n\n", code)
-	Println("Headers:")
+	prnt.Printf("Status Code: %d\n\n", code)
+	prnt.Println("Headers:")
 	for k, v := range headers {
-		Printf("%s: %s\n", k, v)
+		prnt.Printf("%s: %s\n", k, v)
 	}
-	Printf("\nBody:\n%s\n", body)
+	prnt.Printf("\nBody:\n%s\n", body)
 
 	return 0
 }
@@ -352,7 +355,7 @@ func printViaCore(L *lua.LState) int {
 	for i := 1; i <= top; i++ {
 		args = append(args, L.ToStringMeta(L.Get(i)).String())
 	}
-	Println(args...)
+	prnt.Println(args...)
 	return 0
 }
 

@@ -9,11 +9,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
 )
 
-func (r *Router) handleBaseConfig(w http.ResponseWriter, req *http.Request) {
+func (r *Router) handleCoreConfig(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
 		r.ServerError(w, err)
@@ -39,13 +39,7 @@ func (r *Router) setCurrentEnv(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	env := strings.Join(envSlice, "\n")
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	conf.CurrentEnv = env
-	err = conf.Flush()
+	err = handlers.SetCurrentEnv(env)
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -65,18 +59,18 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 		return
 	}
 	scope := strings.Join(scopeSlice, "\n")
-	titleSlice, ok := req.Form["title"]
+	nameSlice, ok := req.Form["name"]
 	if !ok {
-		titleSlice = []string{}
+		nameSlice = []string{}
 	}
-	title := strings.Join(titleSlice, "\n")
+	name := strings.Join(nameSlice, "\n")
 	path, ok := getParamEscaped(r, w, req, "path")
 	if !ok {
 		return
 	}
 	var redirectURL string
-	if title != "" {
-		redirectURL = fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title)
+	if name != "" {
+		redirectURL = fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), name)
 	} else {
 		redirectURL = fmt.Sprintf("/collection/%s", url.PathEscape(path))
 	}
@@ -95,7 +89,7 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 			r.ServerError(w, err)
 			return
 		}
-		sq, err := core.ReadSqumpfile("/" + path)
+		sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
 		if err != nil {
 			r.ServerError(w, err)
 			return
@@ -128,13 +122,13 @@ func (r *Router) createCollection(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	reqTitle, ok := req.Form["title"]
+	reqName, ok := req.Form["name"]
 	if !ok {
-		r.RequestError(w, errors.New("create collection form does not contain field 'title'"))
+		r.RequestError(w, errors.New("create collection form does not contain field 'name'"))
 		return
 	}
-	title := strings.Join(reqTitle, "\n")
-	err = handlers.AddFile(title)
+	name := strings.Join(reqName, "\n")
+	err = handlers.AddFile(name)
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -152,12 +146,12 @@ func (r *Router) handleRenameCollection(w http.ResponseWriter, req *http.Request
 		r.ServerError(w, err)
 		return
 	}
-	newTitle, ok := req.Form["new-name"]
+	newName, ok := req.Form["new-name"]
 	if !ok {
 		r.RequestError(w, errors.New("rename collection form does not contain field 'new-name'"))
 		return
 	}
-	err = handlers.UpdateCollectionName(fmt.Sprintf("/%s", path), strings.Join(newTitle, "\n"))
+	err = handlers.UpdateCollectionName(fmt.Sprintf("/%s", path), strings.Join(newName, "\n"))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -170,7 +164,7 @@ func (r *Router) handleUnregisterCollection(w http.ResponseWriter, req *http.Req
 	if !ok {
 		return
 	}
-	err := handlers.Unregister("/" + path)
+	err := handlers.Unregister(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -183,7 +177,7 @@ func (r *Router) handleDeleteCollection(w http.ResponseWriter, req *http.Request
 	if !ok {
 		return
 	}
-	err := handlers.RemoveCollection("/" + path)
+	err := handlers.RemoveCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -201,18 +195,18 @@ func (r *Router) createRequest(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	reqTitle, ok := req.Form["title"]
+	reqName, ok := req.Form["name"]
 	if !ok {
-		r.RequestError(w, errors.New("create request form does not contain field 'title'"))
+		r.RequestError(w, errors.New("create request form does not contain field 'name'"))
 		return
 	}
-	title := strings.Join(reqTitle, "\n")
-	err = handlers.AddRequest("/"+path, title)
+	name := strings.Join(reqName, "\n")
+	err = handlers.AddRequest(fmt.Sprintf("/%s", path), name)
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), name), http.StatusFound)
 }
 
 func (r *Router) handleRenameRequest(w http.ResponseWriter, req *http.Request) {
@@ -250,7 +244,7 @@ func (r *Router) updateRequestScript(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	title, ok := getParamEscaped(r, w, req, "title")
+	name, ok := getParamEscaped(r, w, req, "name")
 	if !ok {
 		return
 	}
@@ -264,12 +258,12 @@ func (r *Router) updateRequestScript(w http.ResponseWriter, req *http.Request) {
 		r.RequestError(w, errors.New("update request form does not contain field 'edit'"))
 		return
 	}
-	err = handlers.UpdateRequestScript("/"+path, title, script)
+	err = handlers.UpdateRequestScript(fmt.Sprintf("/%s", path), name, script)
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), title), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), name), http.StatusFound)
 }
 
 func (r *Router) performDeleteRequest(w http.ResponseWriter, req *http.Request) {
@@ -277,11 +271,11 @@ func (r *Router) performDeleteRequest(w http.ResponseWriter, req *http.Request) 
 	if !ok {
 		return
 	}
-	title, ok := getParamEscaped(r, w, req, "title")
+	name, ok := getParamEscaped(r, w, req, "name")
 	if !ok {
 		return
 	}
-	err := handlers.RemoveRequest("/"+path, title)
+	err := handlers.RemoveRequest(fmt.Sprintf("/%s", path), name)
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -303,13 +297,13 @@ func (r *Router) performAutoregister(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/", http.StatusFound)
 }
 
-func configMap(req *http.Request) (core.EnvMap, error) {
+func configMap(req *http.Request) (data.EnvMap, error) {
 	configData, ok := req.Form["config"]
 	if !ok {
-		return nil, errors.New("base config form does not contain field 'config'")
+		return nil, errors.New("core config form does not contain field 'config'")
 	}
 	configString := strings.Join(configData, "\n")
-	var envMap core.EnvMap
+	var envMap data.EnvMap
 	err := json.Unmarshal([]byte(configString), &envMap)
 	if err != nil {
 		return nil, err
@@ -322,7 +316,7 @@ func saveCoreConfig(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}

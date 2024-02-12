@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/EvWilson/sqump/cli/cmder"
-	"github.com/EvWilson/sqump/core"
+	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
 
 	"github.com/ktr0731/go-fuzzyfinder"
@@ -20,9 +20,9 @@ func EditOperation() *cmder.Op {
 		handleGlobalEdit,
 		cmder.NewOp(
 			"env",
-			"edit env <'core' or squmpfile path>",
+			"edit env <'core' or collection path>",
 			"Opens given item's environment in your $EDITOR",
-			handleEditSqumpfileEnv,
+			handleEditCollectionEnv,
 			cmder.NewOp(
 				"core",
 				"edit env core",
@@ -32,8 +32,8 @@ func EditOperation() *cmder.Op {
 		),
 		cmder.NewOp(
 			"req",
-			"edit req <squmpfile path> <request name>",
-			"Opens selected request from given squmpfile for editing in your $EDITOR",
+			"edit req <collection path> <request name>",
+			"Opens selected request from given collection for editing in your $EDITOR",
 			handleEditReq,
 		),
 	)
@@ -42,20 +42,20 @@ func EditOperation() *cmder.Op {
 func handleGlobalEdit(_ context.Context, _ []string) error {
 	options := make([]string, 0)
 
-	conf, err := core.ReadConfigFrom(core.DefaultConfigLocation())
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
 		return err
 	}
 	options = append(options, "core.env", "core.current_env")
 	for _, path := range conf.Files {
-		sq, err := core.ReadSqumpfile(path)
+		sq, err := data.ReadCollection(path)
 		if err != nil {
 			return err
 		}
-		options = append(options, fmt.Sprintf("%s.env", sq.Title))
-		options = append(options, fmt.Sprintf("%s.title", sq.Title))
+		options = append(options, fmt.Sprintf("%s.env", sq.Name))
+		options = append(options, fmt.Sprintf("%s.name", sq.Name))
 		for _, req := range sq.Requests {
-			options = append(options, fmt.Sprintf("%s.%s", sq.Title, req.Title))
+			options = append(options, fmt.Sprintf("%s.%s", sq.Name, req.Name))
 		}
 	}
 
@@ -75,25 +75,25 @@ func handleGlobalEdit(_ context.Context, _ []string) error {
 	} else if option == "core.current_env" {
 		return conf.EditCurrentEnv()
 	} else if strings.HasSuffix(option, ".env") {
-		title := strings.TrimSuffix(option, ".env")
-		sq, err := conf.SqumpfileByTitle(title)
+		name := strings.TrimSuffix(option, ".env")
+		sq, err := conf.CollectionByName(name)
 		if err != nil {
 			return err
 		}
 		return sq.EditEnv()
-	} else if strings.HasSuffix(option, ".title") {
-		title := strings.TrimSuffix(option, ".title")
-		sq, err := conf.SqumpfileByTitle(title)
+	} else if strings.HasSuffix(option, ".name") {
+		name := strings.TrimSuffix(option, ".name")
+		sq, err := conf.CollectionByName(name)
 		if err != nil {
 			return err
 		}
-		return sq.EditTitle()
+		return sq.EditName()
 	} else {
 		pieces := strings.Split(option, ".")
 		if len(pieces) != 2 {
 			return fmt.Errorf("more than a single '.' found in request identifier: '%s'", option)
 		}
-		sq, err := conf.SqumpfileByTitle(pieces[0])
+		sq, err := conf.CollectionByName(pieces[0])
 		if err != nil {
 			return err
 		}
@@ -101,22 +101,22 @@ func handleGlobalEdit(_ context.Context, _ []string) error {
 	}
 }
 
-func handleEditSqumpfileEnv(_ context.Context, args []string) error {
+func handleEditCollectionEnv(_ context.Context, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("expected 1 arg to `edit env`, got: %d", len(args))
 	}
 	fpath := args[0]
-	return handlers.EditSqumpfileEnv(fpath)
+	return handlers.EditCollectionEnv(fpath)
 }
 
 func handleEditEnvCore(_ context.Context, _ []string) error {
-	return handlers.EditConfigEnv(core.DefaultConfigLocation())
+	return handlers.EditConfigEnv(data.DefaultConfigLocation())
 }
 
 func handleEditReq(_ context.Context, args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("expected 2 args to `edit req`, got: %d", len(args))
 	}
-	squmpfileName, requestName := args[0], args[1]
-	return handlers.EditRequest(squmpfileName, requestName)
+	collectionName, requestName := args[0], args[1]
+	return handlers.EditRequest(collectionName, requestName)
 }

@@ -3,12 +3,12 @@
 <div class="flex-container flex-column">
 	<div class="flex-smaller"><a href="/">&lt;&lt; Home</a></div>
 	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}">&lt;&lt; Back to Collection</a></div>
-	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}/request/{{.RequestTitle}}">&lt;&lt; Back to Request</a></div>
+	<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}/request/{{.RequestName}}">&lt;&lt; Back to Request</a></div>
 </div>
 
-<h3>Delete request {{.RequestTitle}} from {{.CollectionTitle}}?</h3>
+<h3>Delete request {{.RequestName}} from {{.CollectionName}}?</h3>
 
-<form action="/collection/{{.EscapedPath}}/request/{{.RequestTitle}}/delete" method="POST">
+<form action="/collection/{{.EscapedPath}}/request/{{.RequestName}}/delete" method="POST">
 	<input type="submit" value="Yep!" />
 	<button onclick="cancel(event)">Cancel</button>
 </form>

@@ -8,7 +8,7 @@ All data types are outlined as best as possible, and all parameters are required
 ```
 execute(request) -> data
     Parameters:
-        request - string, representing the title of another script in the squmpfile collection
+        request - string, representing the name of another script in the collection
     Returns:
         data - table, the data returned by the specified request
 

@@ -1,29 +1,53 @@
-package core
+package exec
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 	"text/template"
+
+	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/prnt"
 )
 
 type Identifier struct {
-	Path      string
-	Squmpfile string
-	Request   string
+	Path       string
+	Collection string
+	Request    string
 }
 
 func (i Identifier) String() string {
-	return fmt.Sprintf("%s.%s.%s", i.Path, i.Squmpfile, i.Request)
+	return fmt.Sprintf("%s.%s.%s", i.Path, i.Collection, i.Request)
 }
 
 func PrepareScript(
-	conf *Config,
+	sq *data.Collection,
+	requestName string,
+	conf *data.Config,
+	overrides data.EnvMapValue,
+) (string, data.EnvMapValue, error) {
+	req, ok := sq.GetRequest(requestName)
+	if !ok {
+		return "", nil, data.ErrNotFound{
+			MissingItem: "request",
+			Location:    requestName,
+		}
+	}
+	ident := Identifier{
+		Path:       sq.Path,
+		Collection: sq.Name,
+		Request:    requestName,
+	}
+	return prepScript(conf, ident, req.Script.String(), sq.Environment, overrides)
+}
+
+func prepScript(
+	conf *data.Config,
 	ident Identifier,
 	script string,
-	requestEnv EnvMap,
-	overrides EnvMapValue,
-) (string, EnvMapValue, error) {
+	requestEnv data.EnvMap,
+	overrides data.EnvMapValue,
+) (string, data.EnvMapValue, error) {
 	mergedEnv, err := getMergedEnv(conf.CurrentEnv, requestEnv, conf.Environment, overrides)
 	if err != nil {
 		return "", nil, err
@@ -37,14 +61,26 @@ func PrepareScript(
 }
 
 func ExecuteRequest(
-	conf *Config,
-	ident Identifier,
-	script string,
-	requestEnv EnvMap,
-	overrides EnvMapValue,
+	sq *data.Collection,
+	requestName string,
+	conf *data.Config,
+	overrides data.EnvMapValue,
 	loopCheck LoopChecker,
 ) (*State, error) {
-	script, mergedEnv, err := PrepareScript(conf, ident, script, requestEnv, overrides)
+	req, ok := sq.GetRequest(requestName)
+	if !ok {
+		return nil, data.ErrNotFound{
+			MissingItem: "request",
+			Location:    requestName,
+		}
+	}
+	ident := Identifier{
+		Path:       sq.Path,
+		Collection: sq.Name,
+		Request:    requestName,
+	}
+
+	script, mergedEnv, err := prepScript(conf, ident, req.Script.String(), sq.Environment, overrides)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +92,7 @@ func ExecuteRequest(
 	if state.err != nil || err != nil {
 		return nil, mergeErrors(state.err, err)
 	}
+	prnt.Printf("<script '%s: %s' complete>\n", sq.Name, requestName)
 
 	return state, nil
 }
@@ -77,23 +114,28 @@ func replaceEnvTemplates(ident, script string, env map[string]string) (string, e
 	return buf.String(), nil
 }
 
-func getMergedEnv(current string, squmpEnv, coreEnv EnvMap, overrides EnvMapValue) (EnvMapValue, error) {
-	squmpfileEnv, ok := squmpEnv[current]
+func getMergedEnv(
+	current string,
+	squmpEnv,
+	coreEnv data.EnvMap,
+	overrides data.EnvMapValue,
+) (data.EnvMapValue, error) {
+	collectionEnv, ok := squmpEnv[current]
 	if !ok {
-		return nil, fmt.Errorf("no matching environment found in squmpfile for name: %s", current)
+		return nil, fmt.Errorf("no matching environment found in collection for name: %s", current)
 	}
 	configEnv, ok := coreEnv[current]
 	if !ok {
 		// Overrides in the core config are optional, so this is not a failure case
 		configEnv = make(map[string]string)
 	}
-	return mergeMaps(squmpfileEnv, configEnv, overrides), nil
+	return mergeMaps(collectionEnv, configEnv, overrides), nil
 }
 
 // mergeMaps will upsert later map entries into/over earlier map entries
-func mergeMaps(m ...EnvMapValue) EnvMapValue {
+func mergeMaps(m ...data.EnvMapValue) data.EnvMapValue {
 	if len(m) == 0 {
-		return make(EnvMapValue)
+		return make(data.EnvMapValue)
 	}
 
 	res := m[0]

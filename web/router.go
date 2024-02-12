@@ -46,7 +46,7 @@ func NewRouter() (*Router, error) {
 		templates: tc,
 	}
 	mux.Get("/", r.showHome)
-	mux.Post("/config", r.handleBaseConfig)
+	mux.Post("/config", r.handleCoreConfig)
 	mux.Post("/current-env", r.setCurrentEnv)
 	mux.Get("/ws", r.handleSocketConnection)
 	mux.Post("/autoregister", r.performAutoregister)
@@ -62,12 +62,12 @@ func NewRouter() (*Router, error) {
 		mux.Post("/delete", r.handleDeleteCollection)
 		mux.Route("/request", func(mux chi.Router) {
 			mux.Post("/create/new", r.createRequest)
-			mux.Get("/{title}", r.showRequest)
-			mux.Post("/{title}/edit-script", r.updateRequestScript)
-			mux.Get("/{title}/rename", r.showRenameRequest)
-			mux.Post("/{title}/rename", r.handleRenameRequest)
-			mux.Get("/{title}/delete", r.showDeleteRequest)
-			mux.Post("/{title}/delete", r.performDeleteRequest)
+			mux.Get("/{name}", r.showRequest)
+			mux.Post("/{name}/edit-script", r.updateRequestScript)
+			mux.Get("/{name}/rename", r.showRenameRequest)
+			mux.Post("/{name}/rename", r.handleRenameRequest)
+			mux.Get("/{name}/delete", r.showDeleteRequest)
+			mux.Post("/{name}/delete", r.performDeleteRequest)
 		})
 	})
 	subAssets, err := fs.Sub(assets, "assets")

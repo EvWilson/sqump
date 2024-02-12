@@ -4,10 +4,10 @@
     "minor": 1,
     "patch": 0
   },
-  "title": "A_Multi_Env_Squmpfile",
+  "name": "A_Multi_Env_Squmpfile",
   "requests": [
     {
-      "title": "A",
+      "name": "A",
       "script": [
         "assert(\"{{.zero}}\" == \"0\", \"A 0\")",
         "assert(\"{{.one}}\" == \"one\", \"A 1\")",

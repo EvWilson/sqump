@@ -30,8 +30,8 @@ func AutoregisterOperation() *cmder.Op {
 func RegisterOperation() *cmder.Op {
 	return cmder.NewOp(
 		"register",
-		"register <squmpfile path>",
-		"Registers the given squmpfile in your config",
+		"register <collection path>",
+		"Registers the given collection in your config",
 		func(_ context.Context, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("expected 1 argument to `register`, got: %d", len(args))
@@ -44,8 +44,8 @@ func RegisterOperation() *cmder.Op {
 func UnregisterOperation() *cmder.Op {
 	return cmder.NewOp(
 		"unregister",
-		"unregister <squmpfile path>",
-		"Unregisters the given squmpfile from your config",
+		"unregister <collection path>",
+		"Unregisters the given collection from your config",
 		func(_ context.Context, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("expected 1 argument to `unregister`, got: %d", len(args))

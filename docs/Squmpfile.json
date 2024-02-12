@@ -4,10 +4,10 @@
     "minor": 1,
     "patch": 0
   },
-  "title": "Demo_Squmpfile",
+  "name": "Demo_Squmpfile",
   "requests": [
     {
-      "title": "Req1",
+      "name": "Req1",
       "script": [
         "local s = require('sqump')\r",
         "\r",
@@ -23,7 +23,7 @@
       ]
     },
     {
-      "title": "Req2",
+      "name": "Req2",
       "script": [
         "local s = require('sqump')\r",
         "\r",
@@ -45,7 +45,7 @@
       ]
     },
     {
-      "title": "Req3",
+      "name": "Req3",
       "script": [
         "local k = require('sqump_kafka')\r",
         "\r",
