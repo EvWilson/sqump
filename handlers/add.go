@@ -9,8 +9,8 @@ import (
 )
 
 func AddFile(name string) error {
-	sq := data.DefaultCollection()
-	return AddFileAtPath(name, sq.Path)
+	coll := data.DefaultCollection()
+	return AddFileAtPath(name, coll.Path)
 }
 
 func AddFileAtPath(name string, path string) error {

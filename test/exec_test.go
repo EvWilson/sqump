@@ -48,11 +48,11 @@ func TestExample(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		sq, err := data.ReadCollection(tmpFile.F.Name())
+		coll, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(sq, "A", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "A", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -64,11 +64,11 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sq, err := data.ReadCollection(tmpFile.F.Name())
+		coll, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(sq, "B", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "B", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,11 +80,11 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sq, err := data.ReadCollection(tmpFile.F.Name())
+		coll, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(sq, "A", conf, data.EnvMapValue{
+		_, err = exec.ExecuteRequest(coll, "A", conf, data.EnvMapValue{
 			"two": "2",
 		}, make(exec.LoopChecker))
 		if err != nil {
@@ -98,11 +98,11 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sq, err := data.ReadCollection(tmpFile.F.Name())
+		coll, err := data.ReadCollection(tmpFile.F.Name())
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(sq, "C", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "C", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}

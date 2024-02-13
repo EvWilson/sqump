@@ -89,13 +89,7 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 			r.ServerError(w, err)
 			return
 		}
-		sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
-		if err != nil {
-			r.ServerError(w, err)
-			return
-		}
-		sq.Environment = envMap
-		err = sq.Flush()
+		err = handlers.UpdateCollectionEnv(fmt.Sprintf("/%s", path), envMap)
 		if err != nil {
 			r.ServerError(w, err)
 			return
@@ -316,12 +310,7 @@ func saveCoreConfig(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
-	if err != nil {
-		return err
-	}
-	conf.Environment = envMap
-	err = conf.Flush()
+	err = handlers.UpdateConfigEnv(envMap)
 	if err != nil {
 		return err
 	}

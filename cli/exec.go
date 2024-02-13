@@ -47,18 +47,18 @@ func handleExec(ctx context.Context, args []string) error {
 func handleExecFuzzy(overrides data.EnvMapValue) error {
 	options := make([]string, 0)
 
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	conf, err := handlers.GetConfig()
 	if err != nil {
 		return err
 	}
 
 	for _, path := range conf.Files {
-		sq, err := data.ReadCollection(path)
+		coll, err := handlers.GetCollection(path)
 		if err != nil {
 			return err
 		}
-		for _, req := range sq.Requests {
-			options = append(options, fmt.Sprintf("%s.%s", sq.Name, req.Name))
+		for _, req := range coll.Requests {
+			options = append(options, fmt.Sprintf("%s.%s", coll.Name, req.Name))
 		}
 	}
 

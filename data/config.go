@@ -202,12 +202,12 @@ func (c *Config) EditCurrentEnv() error {
 
 func (c *Config) CollectionByName(name string) (*Collection, error) {
 	for _, fpath := range c.Files {
-		sq, err := ReadCollection(fpath)
+		coll, err := ReadCollection(fpath)
 		if err != nil {
 			return nil, err
 		}
-		if sq.Name == name {
-			return sq, nil
+		if coll.Name == name {
+			return coll, nil
 		}
 	}
 	return nil, fmt.Errorf("no collection found for name '%s'", name)

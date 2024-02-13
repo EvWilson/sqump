@@ -42,20 +42,20 @@ func EditOperation() *cmder.Op {
 func handleGlobalEdit(_ context.Context, _ []string) error {
 	options := make([]string, 0)
 
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	conf, err := handlers.GetConfig()
 	if err != nil {
 		return err
 	}
 	options = append(options, "core.env", "core.current_env")
 	for _, path := range conf.Files {
-		sq, err := data.ReadCollection(path)
+		coll, err := handlers.GetCollection(path)
 		if err != nil {
 			return err
 		}
-		options = append(options, fmt.Sprintf("%s.env", sq.Name))
-		options = append(options, fmt.Sprintf("%s.name", sq.Name))
-		for _, req := range sq.Requests {
-			options = append(options, fmt.Sprintf("%s.%s", sq.Name, req.Name))
+		options = append(options, fmt.Sprintf("%s.env", coll.Name))
+		options = append(options, fmt.Sprintf("%s.name", coll.Name))
+		for _, req := range coll.Requests {
+			options = append(options, fmt.Sprintf("%s.%s", coll.Name, req.Name))
 		}
 	}
 
@@ -76,28 +76,28 @@ func handleGlobalEdit(_ context.Context, _ []string) error {
 		return conf.EditCurrentEnv()
 	} else if strings.HasSuffix(option, ".env") {
 		name := strings.TrimSuffix(option, ".env")
-		sq, err := conf.CollectionByName(name)
+		coll, err := conf.CollectionByName(name)
 		if err != nil {
 			return err
 		}
-		return sq.EditEnv()
+		return coll.EditEnv()
 	} else if strings.HasSuffix(option, ".name") {
 		name := strings.TrimSuffix(option, ".name")
-		sq, err := conf.CollectionByName(name)
+		coll, err := conf.CollectionByName(name)
 		if err != nil {
 			return err
 		}
-		return sq.EditName()
+		return coll.EditName()
 	} else {
 		pieces := strings.Split(option, ".")
 		if len(pieces) != 2 {
 			return fmt.Errorf("more than a single '.' found in request identifier: '%s'", option)
 		}
-		sq, err := conf.CollectionByName(pieces[0])
+		coll, err := conf.CollectionByName(pieces[0])
 		if err != nil {
 			return err
 		}
-		return sq.EditRequest(pieces[1])
+		return coll.EditRequest(pieces[1])
 	}
 }
 
@@ -106,7 +106,7 @@ func handleEditCollectionEnv(_ context.Context, args []string) error {
 		return fmt.Errorf("expected 1 arg to `edit env`, got: %d", len(args))
 	}
 	fpath := args[0]
-	return handlers.EditCollectionEnv(fpath)
+	return handlers.EditCollectionEnvTUI(fpath)
 }
 
 func handleEditEnvCore(_ context.Context, _ []string) error {

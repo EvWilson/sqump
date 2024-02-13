@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/EvWilson/sqump/cli/cmder"
-	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/handlers"
 
 	"github.com/ktr0731/go-fuzzyfinder"
 )
@@ -28,18 +28,18 @@ func RemoveOperation() *cmder.Op {
 func handleRemove() error {
 	options := make([]string, 0)
 
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	conf, err := handlers.GetConfig()
 	if err != nil {
 		return err
 	}
 
 	for _, path := range conf.Files {
-		sq, err := data.ReadCollection(path)
+		coll, err := handlers.GetCollection(path)
 		if err != nil {
 			return err
 		}
-		for _, req := range sq.Requests {
-			options = append(options, fmt.Sprintf("%s.%s", sq.Name, req.Name))
+		for _, req := range coll.Requests {
+			options = append(options, fmt.Sprintf("%s.%s", coll.Name, req.Name))
 		}
 	}
 
@@ -57,9 +57,9 @@ func handleRemove() error {
 	if len(pieces) != 2 {
 		return fmt.Errorf("more than a single '.' found in request identifier: '%s'", options[idx])
 	}
-	sq, err := conf.CollectionByName(pieces[0])
+	coll, err := conf.CollectionByName(pieces[0])
 	if err != nil {
 		return err
 	}
-	return sq.RemoveRequest(pieces[1])
+	return coll.RemoveRequest(pieces[1])
 }

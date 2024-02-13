@@ -21,12 +21,12 @@ func (i Identifier) String() string {
 }
 
 func PrepareScript(
-	sq *data.Collection,
+	coll *data.Collection,
 	requestName string,
 	conf *data.Config,
 	overrides data.EnvMapValue,
 ) (string, data.EnvMapValue, error) {
-	req, ok := sq.GetRequest(requestName)
+	req, ok := coll.GetRequest(requestName)
 	if !ok {
 		return "", nil, data.ErrNotFound{
 			MissingItem: "request",
@@ -34,11 +34,11 @@ func PrepareScript(
 		}
 	}
 	ident := Identifier{
-		Path:       sq.Path,
-		Collection: sq.Name,
+		Path:       coll.Path,
+		Collection: coll.Name,
 		Request:    requestName,
 	}
-	return prepScript(conf, ident, req.Script.String(), sq.Environment, overrides)
+	return prepScript(conf, ident, req.Script.String(), coll.Environment, overrides)
 }
 
 func prepScript(
@@ -61,13 +61,13 @@ func prepScript(
 }
 
 func ExecuteRequest(
-	sq *data.Collection,
+	coll *data.Collection,
 	requestName string,
 	conf *data.Config,
 	overrides data.EnvMapValue,
 	loopCheck LoopChecker,
 ) (*State, error) {
-	req, ok := sq.GetRequest(requestName)
+	req, ok := coll.GetRequest(requestName)
 	if !ok {
 		return nil, data.ErrNotFound{
 			MissingItem: "request",
@@ -75,12 +75,12 @@ func ExecuteRequest(
 		}
 	}
 	ident := Identifier{
-		Path:       sq.Path,
-		Collection: sq.Name,
+		Path:       coll.Path,
+		Collection: coll.Name,
 		Request:    requestName,
 	}
 
-	script, mergedEnv, err := prepScript(conf, ident, req.Script.String(), sq.Environment, overrides)
+	script, mergedEnv, err := prepScript(conf, ident, req.Script.String(), coll.Environment, overrides)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func ExecuteRequest(
 	if state.err != nil || err != nil {
 		return nil, mergeErrors(state.err, err)
 	}
-	prnt.Printf("<script '%s: %s' complete>\n", sq.Name, requestName)
+	prnt.Printf("<script '%s: %s' complete>\n", coll.Name, requestName)
 
 	return state, nil
 }

@@ -223,19 +223,19 @@ func (c *Collection) UpsertRequest(req *Request) *Collection {
 func (c *Collection) EditRequest(reqName string) error {
 	path := c.Path
 	cb := func(b []byte) error {
-		sq, err := ReadCollection(path)
+		coll, err := ReadCollection(path)
 		if err != nil {
 			return err
 		}
-		req, ok := sq.GetRequest(reqName)
+		req, ok := coll.GetRequest(reqName)
 		if !ok {
 			return ErrNotFound{
 				MissingItem: reqName,
-				Location:    sq.Name,
+				Location:    coll.Name,
 			}
 		}
 		req.Script = ScriptFromString(strings.TrimSpace(string(b)))
-		return sq.UpsertRequest(req).Flush()
+		return coll.UpsertRequest(req).Flush()
 	}
 
 	req, ok := c.GetRequest(reqName)
@@ -256,7 +256,7 @@ func (c *Collection) EditRequest(reqName string) error {
 func (c *Collection) EditEnv() error {
 	path := c.Path
 	cb := func(b []byte) error {
-		sq, err := ReadCollection(path)
+		coll, err := ReadCollection(path)
 		if err != nil {
 			return err
 		}
@@ -266,8 +266,8 @@ func (c *Collection) EditEnv() error {
 			return err
 		}
 
-		sq.Environment = e
-		return sq.Flush()
+		coll.Environment = e
+		return coll.Flush()
 	}
 
 	envBytes, err := json.MarshalIndent(c.Environment, "", "  ")
@@ -287,12 +287,12 @@ func (c *Collection) EditEnv() error {
 func (c *Collection) EditName() error {
 	path := c.Path
 	cb := func(b []byte) error {
-		sq, err := ReadCollection(path)
+		coll, err := ReadCollection(path)
 		if err != nil {
 			return err
 		}
-		sq.Name = strings.TrimSpace(string(b))
-		return sq.Flush()
+		coll.Name = strings.TrimSpace(string(b))
+		return coll.Flush()
 	}
 
 	basename := filepath.Base(c.Name)

@@ -199,11 +199,11 @@ func (s *State) execute(_ *lua.LState) int {
 		return s.CancelErr("error: execute: cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
 	}
 
-	sq, err := data.ReadCollection(ident.Path)
+	coll, err := data.ReadCollection(ident.Path)
 	if err != nil {
 		return s.CancelErr("error: execute: while reading collection at '%s': %v", ident.Path, err)
 	}
-	state, err := ExecuteRequest(sq, request, s.config, s.environment, s.loopCheck)
+	state, err := ExecuteRequest(coll, request, s.config, s.environment, s.loopCheck)
 	if err != nil {
 		return s.CancelErr("error: execute: while performing request '%s': %v", request, err)
 	}

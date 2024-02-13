@@ -7,7 +7,7 @@ import (
 	"github.com/EvWilson/sqump/data"
 )
 
-func EditCollectionEnv(fpath string) error {
+func EditCollectionEnvTUI(fpath string) error {
 	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return err
@@ -33,6 +33,15 @@ func UpdateCollectionName(fpath, newName string) error {
 		return err
 	}
 	coll.Name = newName
+	return coll.Flush()
+}
+
+func UpdateCollectionEnv(fpath string, env data.EnvMap) error {
+	coll, err := data.ReadCollection(fpath)
+	if err != nil {
+		return err
+	}
+	coll.Environment = env
 	return coll.Flush()
 }
 
@@ -89,4 +98,13 @@ func EditConfigEnv(fpath string) error {
 		return err
 	}
 	return nil
+}
+
+func UpdateConfigEnv(env data.EnvMap) error {
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	if err != nil {
+		return err
+	}
+	conf.Environment = env
+	return conf.Flush()
 }

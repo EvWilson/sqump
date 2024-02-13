@@ -14,7 +14,7 @@ import (
 )
 
 func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	conf, err := handlers.GetConfig()
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -36,15 +36,15 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 	}
 	info := make([]fileInfo, 0, len(files))
 	for _, path := range files {
-		sq, err := data.ReadCollection(path)
+		coll, err := handlers.GetCollection(path)
 		if err != nil {
 			r.ServerError(w, err)
 			return
 		}
 		info = append(info, fileInfo{
 			EscapedPath: url.PathEscape(strings.TrimPrefix(path, "/")),
-			Name:        sq.Name,
-			Requests:    sq.Requests,
+			Name:        coll.Name,
+			Requests:    coll.Requests,
 		})
 	}
 	r.Render(w, 200, "home.tmpl.html", struct {
@@ -65,17 +65,17 @@ func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
+	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	envBytes, err := json.MarshalIndent(sq.Environment, "", "  ")
+	envBytes, err := json.MarshalIndent(coll.Environment, "", "  ")
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	conf, err := handlers.GetConfig()
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -88,11 +88,11 @@ func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 		Requests           []data.Request
 		Error              string
 	}{
-		Name:               sq.Name,
+		Name:               coll.Name,
 		EscapedPath:        url.PathEscape(path),
 		EnvironmentText:    string(envBytes),
 		CurrentEnvironment: conf.CurrentEnv,
-		Requests:           sq.Requests,
+		Requests:           coll.Requests,
 		Error:              GetError(w, req),
 	})
 }
@@ -106,12 +106,12 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
+	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
 	}
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	conf, err := handlers.GetConfig()
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -122,7 +122,7 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	case "":
 		fallthrough
 	case "collection":
-		envMap = sq.Environment
+		envMap = coll.Environment
 		scope = "Collection"
 	case "core":
 		envMap = conf.Environment
@@ -139,9 +139,9 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	request, ok := sq.GetRequest(name)
+	request, ok := coll.GetRequest(name)
 	if !ok {
-		r.ServerError(w, fmt.Errorf("no request '%s' found in collection '%s'", name, sq.Name))
+		r.ServerError(w, fmt.Errorf("no request '%s' found in collection '%s'", name, coll.Name))
 		return
 	}
 	r.Render(w, 200, "request.tmpl.html", struct {
@@ -156,7 +156,7 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		Error              string
 	}{
 		EscapedPath:        url.PathEscape(path),
-		CollectionName:     sq.Name,
+		CollectionName:     coll.Name,
 		Name:               name,
 		EditText:           request.Script.String(),
 		EnvironmentText:    string(envBytes),
@@ -172,7 +172,7 @@ func (r *Router) showRenameCollection(w http.ResponseWriter, req *http.Request) 
 	if !ok {
 		return
 	}
-	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
+	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -183,7 +183,7 @@ func (r *Router) showRenameCollection(w http.ResponseWriter, req *http.Request) 
 		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
-		Name:        sq.Name,
+		Name:        coll.Name,
 		Error:       GetError(w, req),
 	})
 }
@@ -193,7 +193,7 @@ func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Reque
 	if !ok {
 		return
 	}
-	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
+	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -204,7 +204,7 @@ func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Reque
 		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
-		Name:        sq.Name,
+		Name:        coll.Name,
 		Error:       GetError(w, req),
 	})
 }
@@ -214,7 +214,7 @@ func (r *Router) showDeleteCollection(w http.ResponseWriter, req *http.Request) 
 	if !ok {
 		return
 	}
-	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
+	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -225,7 +225,7 @@ func (r *Router) showDeleteCollection(w http.ResponseWriter, req *http.Request) 
 		Error       string
 	}{
 		EscapedPath: url.PathEscape(path),
-		Name:        sq.Name,
+		Name:        coll.Name,
 		Error:       GetError(w, req),
 	})
 }
@@ -239,7 +239,7 @@ func (r *Router) showRenameRequest(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
+	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -251,7 +251,7 @@ func (r *Router) showRenameRequest(w http.ResponseWriter, req *http.Request) {
 		Error          string
 	}{
 		EscapedPath:    url.PathEscape(path),
-		CollectionName: sq.Name,
+		CollectionName: coll.Name,
 		RequestName:    name,
 		Error:          GetError(w, req),
 	})
@@ -266,7 +266,7 @@ func (r *Router) showDeleteRequest(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
-	sq, err := data.ReadCollection(fmt.Sprintf("/%s", path))
+	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
 	if err != nil {
 		r.ServerError(w, err)
 		return
@@ -279,7 +279,7 @@ func (r *Router) showDeleteRequest(w http.ResponseWriter, req *http.Request) {
 		Error          string
 	}{
 		EscapedPath:    url.PathEscape(path),
-		CollectionName: sq.Name,
+		CollectionName: coll.Name,
 		RequestName:    name,
 		Error:          GetError(w, req),
 	})

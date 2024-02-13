@@ -8,13 +8,14 @@ import (
 
 	"github.com/EvWilson/sqump/cli"
 	"github.com/EvWilson/sqump/data"
+	"github.com/EvWilson/sqump/handlers"
 	"github.com/EvWilson/sqump/prnt"
 )
 
 func main() {
 	prnt.SetPrinter(&prnt.StandardPrinter{})
 	// Get config
-	_, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	_, err := handlers.GetConfig()
 	if errors.Is(err, data.ErrNotFound{}) {
 		err = offerDefaultConfig()
 		if err != nil {
