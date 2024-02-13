@@ -7,13 +7,37 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/EvWilson/sqump/prnt"
 )
 
 const defaultPerms = 0644
 
-var CurrentVersion = NewSemVer(0, 1, 0)
+var (
+	CurrentVersion = NewSemVer(0, 1, 0)
+	collLock       = make(map[string]*sync.RWMutex, 0)
+)
+
+func collRLock(path string) func() {
+	lock, ok := collLock[path]
+	if !ok {
+		lock = &sync.RWMutex{}
+		collLock[path] = lock
+	}
+	lock.RLock()
+	return lock.RUnlock
+}
+
+func collWLock(path string) func() {
+	lock, ok := collLock[path]
+	if !ok {
+		lock = &sync.RWMutex{}
+		collLock[path] = lock
+	}
+	lock.Lock()
+	return lock.Unlock
+}
 
 type Collection struct {
 	Path        string    `json:"-"`
@@ -150,6 +174,8 @@ func (e ErrNotFound) Is(target error) bool {
 }
 
 func (c *Collection) Flush() error {
+	unlock := collWLock(c.Path)
+	defer unlock()
 	err := c.validate()
 	if err != nil {
 		return err
@@ -162,6 +188,8 @@ func (c *Collection) Flush() error {
 }
 
 func ReadCollection(path string) (*Collection, error) {
+	unlock := collRLock(path)
+	defer unlock()
 	b, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return nil, ErrNotFound{

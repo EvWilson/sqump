@@ -7,9 +7,34 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/EvWilson/sqump/prnt"
 )
+
+var (
+	configLock = make(map[string]*sync.RWMutex, 0)
+)
+
+func configRLock(path string) func() {
+	lock, ok := configLock[path]
+	if !ok {
+		lock = &sync.RWMutex{}
+		configLock[path] = lock
+	}
+	lock.RLock()
+	return lock.RUnlock
+}
+
+func configWLock(path string) func() {
+	lock, ok := configLock[path]
+	if !ok {
+		lock = &sync.RWMutex{}
+		configLock[path] = lock
+	}
+	lock.Lock()
+	return lock.Unlock
+}
 
 // DefaultConfigLocation returns the location of the sqump config file
 func DefaultConfigLocation() string {
@@ -35,6 +60,8 @@ type Config struct {
 }
 
 func ReadConfigFrom(path string) (*Config, error) {
+	unlock := configRLock(path)
+	defer unlock()
 	b, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return nil, ErrNotFound{
@@ -56,6 +83,8 @@ func ReadConfigFrom(path string) (*Config, error) {
 }
 
 func (c *Config) Flush() error {
+	unlock := configWLock(c.Path)
+	defer unlock()
 	if err := c.validate(); err != nil {
 		return err
 	}
