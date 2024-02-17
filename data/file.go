@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 
@@ -186,6 +187,9 @@ func (c *Collection) Flush() error {
 	if err != nil {
 		return err
 	}
+	slices.SortFunc(c.Requests, func(a, b Request) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 	b, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err

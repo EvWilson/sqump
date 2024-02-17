@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 
@@ -87,6 +88,9 @@ func (c *Config) Flush() error {
 	if err := c.validate(); err != nil {
 		return err
 	}
+	slices.SortFunc(c.Files, func(a, b string) int {
+		return strings.Compare(a, b)
+	})
 	b, err := json.MarshalIndent(&c, "", "  ")
 	if err != nil {
 		return err
