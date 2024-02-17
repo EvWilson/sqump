@@ -100,7 +100,7 @@ func ExecuteRequest(
 // replaceEnvTemplates takes a script body and inserts environment
 // data into template placeholders
 func replaceEnvTemplates(ident, script string, env map[string]string) (string, error) {
-	tmpl, err := template.New(ident).Parse(script)
+	tmpl, err := template.New(ident).Option("missingkey=error").Parse(script)
 	if err != nil {
 		return "", err
 	}
