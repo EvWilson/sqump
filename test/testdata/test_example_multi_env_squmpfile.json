@@ -17,7 +17,8 @@
   ],
   "environment": {
     "staging": {
-      "zero": "0"
+      "zero": "0",
+      "one": "one"
     }
   }
 }
