@@ -12,8 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/EvWilson/sqump/prnt"
 	"github.com/EvWilson/sqump/web/log"
 	"github.com/EvWilson/sqump/web/middleware"
+	"github.com/EvWilson/sqump/web/util"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -26,14 +28,18 @@ type Router struct {
 	templates TemplateCache
 }
 
-func NewRouter() (*Router, error) {
+func NewRouter(isReadonly bool) (*Router, error) {
+	if isReadonly {
+		prnt.Println("starting server in readonly mode")
+	}
 	mux := chi.NewMux()
 	logLevel := slogLevellFromEnv()
 	l := log.NewLogger(logLevel)
 	mux.Use(
 		chiMiddleware.Recoverer,
-		middleware.LoggingMiddleware(l),
 		middleware.ErrorHandler,
+		middleware.ReadonlyMiddleware(isReadonly),
+		middleware.LoggingMiddleware(l),
 	)
 	tc, err := NewTemplateCache()
 	if err != nil {
@@ -48,7 +54,7 @@ func NewRouter() (*Router, error) {
 	mux.Get("/", r.showHome)
 	mux.Post("/config", r.handleCoreConfig)
 	mux.Post("/current-env", r.setCurrentEnv)
-	mux.Get("/ws", r.handleSocketConnection)
+	mux.Get("/ws", r.handleSocketConnection())
 	mux.Post("/autoregister", r.performAutoregister)
 	mux.Post("/collection/create/new", r.createCollection)
 	mux.Route("/collection/{path}", func(mux chi.Router) {
@@ -99,46 +105,20 @@ func (r *Router) ServerError(w http.ResponseWriter, err error) {
 	} else {
 		_ = r.l.With("error", err).Handler().Handle(context.Background(), rec)
 	}
-	setErrorCookie(w, fmt.Sprintf("Server error: %v", err))
+	util.SetErrorCookie(w, fmt.Sprintf("Server error: %v", err))
 	Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
 func (r *Router) RequestError(w http.ResponseWriter, err error) {
 	r.l.Error(err.Error(), "stack", string(debug.Stack()))
-	setErrorCookie(w, fmt.Sprintf("Request error: %v", err))
+	util.SetErrorCookie(w, fmt.Sprintf("Request error: %v", err))
 	Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-}
-
-func setErrorCookie(w http.ResponseWriter, err string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "error",
-		Value:    err,
-		Path:     "/",
-		Secure:   false,
-		SameSite: http.SameSiteStrictMode,
-	})
 }
 
 func Error(w http.ResponseWriter, error string, code int) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(code)
-}
-
-func GetError(w http.ResponseWriter, req *http.Request) string {
-	cookie, err := req.Cookie("error")
-	if err == nil {
-		http.SetCookie(w, &http.Cookie{
-			Name:     "error",
-			Value:    "",
-			MaxAge:   -1,
-			Secure:   false,
-			SameSite: http.SameSiteStrictMode,
-		})
-		return cookie.Value
-	} else {
-		return ""
-	}
 }
 
 func slogLevellFromEnv() slog.Level {

@@ -11,8 +11,11 @@ func ErrorHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rw := &ErrorResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(rw, r)
-		referer := r.Header.Get("Referer")
-		if rw.statusCode == http.StatusInternalServerError && referer != "" {
+		if rw.statusCode != http.StatusOK {
+			referer := r.Header.Get("Referer")
+			if referer == "" {
+				referer = "/"
+			}
 			http.Redirect(w, r, referer, http.StatusFound)
 		}
 	})
@@ -25,7 +28,7 @@ type ErrorResponseWriter struct {
 
 func (rw *ErrorResponseWriter) WriteHeader(code int) {
 	rw.statusCode = code
-	if code != http.StatusInternalServerError {
+	if code == http.StatusOK {
 		rw.ResponseWriter.WriteHeader(code)
 	}
 }

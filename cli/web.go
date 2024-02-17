@@ -13,9 +13,10 @@ func WebOperation() *cmder.Op {
 	return cmder.NewOp(
 		"webview",
 		"webview",
-		"Open the web UI for interacting with sqump",
-		func(_ context.Context, args []string) error {
-			mux, err := web.NewRouter()
+		"Open the web UI for interacting with sqump. Start with '--readonly' to block potentially destructive actions.",
+		func(ctx context.Context, args []string) error {
+			isReadonly := ctx.Value(cmder.ReadonlyContextKey).(bool)
+			mux, err := web.NewRouter(isReadonly)
 			if err != nil {
 				return err
 			}

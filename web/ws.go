@@ -48,97 +48,99 @@ type ExecResponsePayload struct {
 	OutputFragment string `json:"fragment"`
 }
 
-func (r *Router) handleSocketConnection(w http.ResponseWriter, req *http.Request) {
-	conn, _, _, err := ws.UpgradeHTTP(req, w)
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	r.l.Debug("ws connection opened")
-	prnt.SetPrinter(prnt.NewDualWriter(
-		func(msg string, args ...any) (int, error) {
-			formatted := fmt.Sprintf(msg, args...)
-			cmd := Command{
-				Name: "exec",
-				Payload: ExecResponsePayload{
-					OutputFragment: formatted,
-				},
-			}
-			b, err := json.Marshal(cmd)
-			if err != nil {
-				return 0, err
-			}
-			err = wsutil.WriteServerMessage(conn, ws.OpText, b)
-			if err != nil {
-				r.l.Error("error writing server message from Printf", "error", err)
-			}
-			return -1, err
-		},
-		func(args ...any) (int, error) {
-			formatted := fmt.Sprintln(args...)
-			cmd := Command{
-				Name: "exec",
-				Payload: ExecResponsePayload{
-					OutputFragment: formatted,
-				},
-			}
-			b, err := json.Marshal(cmd)
-			if err != nil {
-				return 0, err
-			}
-			err = wsutil.WriteServerMessage(conn, ws.OpText, b)
-			if err != nil {
-				r.l.Error("error writing server message from Println", "error", err)
-			}
-			return -1, err
-		},
-	))
-	go func() {
-		defer func() {
-			prnt.SetPrinter(&prnt.StandardPrinter{})
-			err = conn.Close()
-			if err != nil {
-				r.l.Error("error closing connection", "error", err)
-				return
+func (r *Router) handleSocketConnection() http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		conn, _, _, err := ws.UpgradeHTTP(req, w)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		r.l.Debug("ws connection opened")
+		prnt.SetPrinter(prnt.NewDualWriter(
+			func(msg string, args ...any) (int, error) {
+				formatted := fmt.Sprintf(msg, args...)
+				cmd := Command{
+					Name: "exec",
+					Payload: ExecResponsePayload{
+						OutputFragment: formatted,
+					},
+				}
+				b, err := json.Marshal(cmd)
+				if err != nil {
+					return 0, err
+				}
+				err = wsutil.WriteServerMessage(conn, ws.OpText, b)
+				if err != nil {
+					r.l.Error("error writing server message from Printf", "error", err)
+				}
+				return -1, err
+			},
+			func(args ...any) (int, error) {
+				formatted := fmt.Sprintln(args...)
+				cmd := Command{
+					Name: "exec",
+					Payload: ExecResponsePayload{
+						OutputFragment: formatted,
+					},
+				}
+				b, err := json.Marshal(cmd)
+				if err != nil {
+					return 0, err
+				}
+				err = wsutil.WriteServerMessage(conn, ws.OpText, b)
+				if err != nil {
+					r.l.Error("error writing server message from Println", "error", err)
+				}
+				return -1, err
+			},
+		))
+		go func() {
+			defer func() {
+				prnt.SetPrinter(&prnt.StandardPrinter{})
+				err = conn.Close()
+				if err != nil {
+					r.l.Error("error closing connection", "error", err)
+					return
+				}
+			}()
+
+			for {
+				msg, _, err := wsutil.ReadClientData(conn)
+				if err != nil {
+					var ce wsutil.ClosedError
+					if errors.As(err, &ce) {
+						if ce.Code == ws.StatusNoStatusRcvd || ce.Code == ws.StatusGoingAway {
+							return
+						}
+					}
+					r.ServerError(w, err)
+					return
+				}
+				var cmd UnparsedCommand
+				err = json.Unmarshal(msg, &cmd)
+				if err != nil {
+					r.ServerError(w, err)
+					return
+				}
+				r.l.Debug("received message", "command", cmd)
+				switch cmd.Command {
+				case "view":
+					err = handleViewCommand(conn, cmd.Payload)
+					if err != nil {
+						prnt.Println("error encountered in view command:", err)
+					}
+				case "exec":
+					err = handleExecCommand(conn, cmd.Payload)
+					if err != nil {
+						prnt.Println("error encountered in exec command:", err)
+					}
+				default:
+					r.ServerError(w, fmt.Errorf("unrecognized command: %s\n", cmd.Command))
+					return
+				}
 			}
 		}()
-
-		for {
-			msg, _, err := wsutil.ReadClientData(conn)
-			if err != nil {
-				var ce wsutil.ClosedError
-				if errors.As(err, &ce) {
-					if ce.Code == ws.StatusNoStatusRcvd || ce.Code == ws.StatusGoingAway {
-						return
-					}
-				}
-				r.ServerError(w, err)
-				return
-			}
-			var cmd UnparsedCommand
-			err = json.Unmarshal(msg, &cmd)
-			if err != nil {
-				r.ServerError(w, err)
-				return
-			}
-			r.l.Debug("received message", "command", cmd)
-			switch cmd.Command {
-			case "view":
-				err = handleViewCommand(conn, cmd.Payload)
-				if err != nil {
-					prnt.Println("error encountered in view command:", err)
-				}
-			case "exec":
-				err = handleExecCommand(conn, cmd.Payload)
-				if err != nil {
-					prnt.Println("error encountered in exec command:", err)
-				}
-			default:
-				r.ServerError(w, fmt.Errorf("unrecognized command: %s\n", cmd.Command))
-				return
-			}
-		}
-	}()
+	})
 }
 
 func handleViewCommand(conn net.Conn, payload json.RawMessage) error {

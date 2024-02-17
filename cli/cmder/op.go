@@ -12,7 +12,10 @@ import (
 
 type ContextKey int
 
-const OverrideContextKey ContextKey = iota
+const (
+	OverrideContextKey ContextKey = iota
+	ReadonlyContextKey
+)
 
 type ErrNoop struct {
 	name string
@@ -129,6 +132,7 @@ func (r *Root) Handle(args []string) error {
 	}
 
 	ctx := context.WithValue(context.Background(), OverrideContextKey, overrides)
+	ctx = context.WithValue(ctx, ReadonlyContextKey, isReadonlyMode(args))
 	for _, op := range r.ops {
 		if op.cmdName == args[0] {
 			return op.Handle(ctx, args[1:])
@@ -162,6 +166,17 @@ func ExtractOverrideMappings(startArgs []string, delimiter string) ([]string, ma
 		i--
 	}
 	return args, mappings, nil
+}
+
+func isReadonlyMode(args []string) bool {
+	readonly := false
+	for _, arg := range args {
+		if arg == "--readonly" {
+			readonly = true
+			break
+		}
+	}
+	return readonly
 }
 
 type Op struct {

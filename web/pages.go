@@ -9,6 +9,7 @@ import (
 
 	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/web/util"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -56,7 +57,7 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 		CoreEnvironmentText: string(envBytes),
 		CurrentEnvironment:  conf.CurrentEnv,
 		Files:               info,
-		Error:               GetError(w, req),
+		Error:               util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -93,7 +94,7 @@ func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
 		EnvironmentText:    string(envBytes),
 		CurrentEnvironment: conf.CurrentEnv,
 		Requests:           coll.Requests,
-		Error:              GetError(w, req),
+		Error:              util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -163,7 +164,7 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 		CurrentEnvironment: conf.CurrentEnv,
 		ExecText:           "",
 		EnvScope:           scope,
-		Error:              GetError(w, req),
+		Error:              util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -184,7 +185,7 @@ func (r *Router) showRenameCollection(w http.ResponseWriter, req *http.Request) 
 	}{
 		EscapedPath: url.PathEscape(path),
 		Name:        coll.Name,
-		Error:       GetError(w, req),
+		Error:       util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -205,7 +206,7 @@ func (r *Router) showUnregisterCollection(w http.ResponseWriter, req *http.Reque
 	}{
 		EscapedPath: url.PathEscape(path),
 		Name:        coll.Name,
-		Error:       GetError(w, req),
+		Error:       util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -226,7 +227,7 @@ func (r *Router) showDeleteCollection(w http.ResponseWriter, req *http.Request) 
 	}{
 		EscapedPath: url.PathEscape(path),
 		Name:        coll.Name,
-		Error:       GetError(w, req),
+		Error:       util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -253,7 +254,7 @@ func (r *Router) showRenameRequest(w http.ResponseWriter, req *http.Request) {
 		EscapedPath:    url.PathEscape(path),
 		CollectionName: coll.Name,
 		RequestName:    name,
-		Error:          GetError(w, req),
+		Error:          util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -281,7 +282,7 @@ func (r *Router) showDeleteRequest(w http.ResponseWriter, req *http.Request) {
 		EscapedPath:    url.PathEscape(path),
 		CollectionName: coll.Name,
 		RequestName:    name,
-		Error:          GetError(w, req),
+		Error:          util.GetErrorOnRequest(w, req),
 	})
 }
 
