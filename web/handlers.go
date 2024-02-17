@@ -13,20 +13,6 @@ import (
 	"github.com/EvWilson/sqump/handlers"
 )
 
-func (r *Router) handleCoreConfig(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	err = saveCoreConfig(req)
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	http.Redirect(w, req, "/", http.StatusFound)
-}
-
 func (r *Router) setCurrentEnv(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
@@ -75,14 +61,6 @@ func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request
 		redirectURL = fmt.Sprintf("/collection/%s", url.PathEscape(path))
 	}
 	switch scope {
-	case "core":
-		err = saveCoreConfig(req)
-		if err != nil {
-			r.ServerError(w, err)
-			return
-		}
-		http.Redirect(w, req, fmt.Sprintf("%s?scope=core", redirectURL), http.StatusFound)
-		return
 	case "collection":
 		envMap, err := configMap(req)
 		if err != nil {
@@ -303,16 +281,4 @@ func configMap(req *http.Request) (data.EnvMap, error) {
 		return nil, err
 	}
 	return envMap, nil
-}
-
-func saveCoreConfig(req *http.Request) error {
-	envMap, err := configMap(req)
-	if err != nil {
-		return err
-	}
-	err = handlers.UpdateConfigEnv(envMap)
-	if err != nil {
-		return err
-	}
-	return nil
 }

@@ -30,20 +30,6 @@
 			<button id="autoregister">Autoregister</button>
 		</div>
 	</div>
-	<div class="flex-smaller">
-		<h3>Core Environment</h3>
-		<form action="/current-env" method="POST">
-			<span>Current:</span>
-			<input type="text" name="current" value="{{.CurrentEnvironment}}" />
-			<input type="submit" value="Submit" />
-		</form>
-		<form action="/config" method="POST">
-			<textarea id="json-editarea" name="config" hidden>{{.CoreEnvironmentText}}</textarea>
-			<div id="json-editor" class="half"></div>
-			<input type="hidden" name="scope" value="core" />
-			<input type="submit" value="Save">
-		</form>
-	</div>
 </div>
 
 <script language="javascript" type="text/javascript" charset="utf-8" src="/editor/json-bundle.min.js"></script>

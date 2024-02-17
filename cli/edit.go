@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/EvWilson/sqump/cli/cmder"
-	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
 
 	"github.com/ktr0731/go-fuzzyfinder"
@@ -23,12 +22,6 @@ func EditOperation() *cmder.Op {
 			"edit env <'core' or collection path>",
 			"Opens given item's environment in your $EDITOR",
 			handleEditCollectionEnv,
-			cmder.NewOp(
-				"core",
-				"edit env core",
-				"Opens core configuration environment in your $EDITOR",
-				handleEditEnvCore,
-			),
 		),
 		cmder.NewOp(
 			"req",
@@ -46,7 +39,7 @@ func handleGlobalEdit(_ context.Context, _ []string) error {
 	if err != nil {
 		return err
 	}
-	options = append(options, "core.env", "core.current_env")
+	options = append(options, "core.current_env")
 	for _, path := range conf.Files {
 		coll, err := handlers.GetCollection(path)
 		if err != nil {
@@ -70,9 +63,7 @@ func handleGlobalEdit(_ context.Context, _ []string) error {
 	}
 
 	option := options[idx]
-	if option == "core.env" {
-		return conf.EditEnv()
-	} else if option == "core.current_env" {
+	if option == "core.current_env" {
 		return conf.EditCurrentEnv()
 	} else if strings.HasSuffix(option, ".env") {
 		name := strings.TrimSuffix(option, ".env")
@@ -107,10 +98,6 @@ func handleEditCollectionEnv(_ context.Context, args []string) error {
 	}
 	fpath := args[0]
 	return handlers.EditCollectionEnvTUI(fpath)
-}
-
-func handleEditEnvCore(_ context.Context, _ []string) error {
-	return handlers.EditConfigEnv(data.DefaultConfigLocation())
 }
 
 func handleEditReq(_ context.Context, args []string) error {

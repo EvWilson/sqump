@@ -48,7 +48,7 @@ func prepScript(
 	requestEnv data.EnvMap,
 	overrides data.EnvMapValue,
 ) (string, data.EnvMapValue, error) {
-	mergedEnv, err := getMergedEnv(conf.CurrentEnv, requestEnv, conf.Environment, overrides)
+	mergedEnv, err := getMergedEnv(conf.CurrentEnv, requestEnv, overrides)
 	if err != nil {
 		return "", nil, err
 	}
@@ -116,20 +116,14 @@ func replaceEnvTemplates(ident, script string, env map[string]string) (string, e
 
 func getMergedEnv(
 	current string,
-	squmpEnv,
-	coreEnv data.EnvMap,
+	squmpEnv data.EnvMap,
 	overrides data.EnvMapValue,
 ) (data.EnvMapValue, error) {
 	collectionEnv, ok := squmpEnv[current]
 	if !ok {
 		return nil, fmt.Errorf("no matching environment found in collection for name: %s", current)
 	}
-	configEnv, ok := coreEnv[current]
-	if !ok {
-		// Overrides in the core config are optional, so this is not a failure case
-		configEnv = make(map[string]string)
-	}
-	return mergeMaps(collectionEnv, configEnv, overrides), nil
+	return mergeMaps(collectionEnv, overrides), nil
 }
 
 // mergeMaps will upsert later map entries into/over earlier map entries

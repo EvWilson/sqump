@@ -52,11 +52,10 @@ func DefaultConfigLocation() string {
 }
 
 type Config struct {
-	Path        string   `json:"-"`
-	Version     SemVer   `json:"version"`
-	Files       []string `json:"files"`
-	CurrentEnv  string   `json:"current_env"`
-	Environment EnvMap   `json:"environment"`
+	Path       string   `json:"-"`
+	Version    SemVer   `json:"version"`
+	Files      []string `json:"files"`
+	CurrentEnv string   `json:"current_env"`
 }
 
 func ReadConfigFrom(path string) (*Config, error) {
@@ -100,9 +99,6 @@ func (c *Config) Flush() error {
 }
 
 func (c *Config) validate() error {
-	if err := c.Environment.validate(); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -172,42 +168,11 @@ func CreateNewConfigFileAt(path string) (*Config, error) {
 
 func DefaultConfig(path string) *Config {
 	return &Config{
-		Path:        path,
-		CurrentEnv:  "staging",
-		Version:     CurrentVersion,
-		Files:       []string{},
-		Environment: EnvMap{},
+		Path:       path,
+		CurrentEnv: "staging",
+		Version:    CurrentVersion,
+		Files:      []string{},
 	}
-}
-
-func (c *Config) EditEnv() error {
-	path := c.Path
-	cb := func(b []byte) error {
-		conf, err := ReadConfigFrom(path)
-		if err != nil {
-			return err
-		}
-
-		var e EnvMap
-		err = json.Unmarshal(b, &e)
-		if err != nil {
-			return err
-		}
-
-		conf.Environment = e
-		return conf.Flush()
-	}
-
-	envBytes, err := json.MarshalIndent(c.Environment, "", "  ")
-	if err != nil {
-		return err
-	}
-	b, err := EditBuffer(envBytes, "core-config-*.json", cb)
-	if err != nil {
-		return err
-	}
-
-	return cb(b)
 }
 
 func (c *Config) EditCurrentEnv() error {
@@ -260,5 +225,4 @@ func (c *Config) PrintInfo() {
 	for _, fpath := range c.Files {
 		prnt.Printf("  %s\n", fpath)
 	}
-	c.Environment.PrintInfo()
 }

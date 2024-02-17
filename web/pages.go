@@ -20,11 +20,6 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	envBytes, err := json.MarshalIndent(conf.Environment, "", "  ")
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
 	files, err := handlers.ListCollections()
 	if err != nil {
 		r.ServerError(w, err)
@@ -54,10 +49,9 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 		Files               []fileInfo
 		Error               string
 	}{
-		CoreEnvironmentText: string(envBytes),
-		CurrentEnvironment:  conf.CurrentEnv,
-		Files:               info,
-		Error:               util.GetErrorOnRequest(w, req),
+		CurrentEnvironment: conf.CurrentEnv,
+		Files:              info,
+		Error:              util.GetErrorOnRequest(w, req),
 	})
 }
 
@@ -125,9 +119,6 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	case "collection":
 		envMap = coll.Environment
 		scope = "Collection"
-	case "core":
-		envMap = conf.Environment
-		scope = "Core"
 	case "temp":
 		envMap = getTempConfig()
 		scope = "Temporary"

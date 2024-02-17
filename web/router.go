@@ -52,7 +52,6 @@ func NewRouter(isReadonly bool) (*Router, error) {
 		templates: tc,
 	}
 	mux.Get("/", r.showHome)
-	mux.Post("/config", r.handleCoreConfig)
 	mux.Post("/current-env", r.setCurrentEnv)
 	mux.Get("/ws", r.handleSocketConnection())
 	mux.Post("/autoregister", r.performAutoregister)

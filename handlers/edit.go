@@ -87,24 +87,3 @@ func SetCurrentEnv(newEnv string) error {
 	conf.CurrentEnv = newEnv
 	return conf.Flush()
 }
-
-func EditConfigEnv(fpath string) error {
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
-	if err != nil {
-		return err
-	}
-	err = conf.EditEnv()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func UpdateConfigEnv(env data.EnvMap) error {
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
-	if err != nil {
-		return err
-	}
-	conf.Environment = env
-	return conf.Flush()
-}
