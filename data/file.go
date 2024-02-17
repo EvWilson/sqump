@@ -69,8 +69,14 @@ func ScriptFromString(s string) Script {
 
 func NewRequest(name string) *Request {
 	return &Request{
-		Name:   name,
-		Script: Script{"print('hello world!')"},
+		Name: name,
+		Script: Script{
+			"local s = require('sqump')",
+			"",
+			"local resp = s.fetch('http://localhost:8000')",
+			"",
+			"s.print_response(resp)",
+		},
 	}
 }
 
