@@ -139,6 +139,8 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	r.Render(w, 200, "request.tmpl.html", struct {
 		EscapedPath        string
 		CollectionName     string
+		CollectionPath     string
+		Requests           []data.Request
 		Name               string
 		EditText           string
 		EnvironmentText    string
@@ -149,6 +151,8 @@ func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
 	}{
 		EscapedPath:        url.PathEscape(path),
 		CollectionName:     coll.Name,
+		CollectionPath:     url.PathEscape(coll.Path),
+		Requests:           coll.Requests,
 		Name:               name,
 		EditText:           request.Script.String(),
 		EnvironmentText:    string(envBytes),
