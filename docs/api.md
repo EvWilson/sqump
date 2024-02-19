@@ -30,12 +30,17 @@ fetch(resource, options) -> response
             headers - table, the headers of the response
             body    - string, the body sent in the response
 
-drill_json(query, json) -> result
+to_json(value) -> json
     Parameters:
-        query - string, period-separated string identifying a location in the given JSON
-        json  - string, the JSON being queried
+        value - any, a value to convert to JSON representation
     Returns:
-        result - variable, either a found basic Lua value or a JSON string of a map or array if a basic type wasn't found by the query
+        json - string, the given value in JSON representation
+
+from_json(json) -> value
+    Parameters:
+        json - string, a valid JSON string
+    Returns:
+        value - any, the given JSON string converted to a Lua value
 
 print_response(response)
     Parameters:

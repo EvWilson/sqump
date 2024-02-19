@@ -13,12 +13,11 @@
         "",
         "local resp = s.fetch('https://pokeapi.co/api/v2/pokemon/{{.pokemon}}')",
         "",
-        "-- s.print_response(resp)",
-        "",
-        "print(s.drill_json('id', resp.body), s.drill_json('types.1.type.name', resp.body))",
+        "local mon = s.from_json(resp.body)",
+        "print(mon.id, mon.types[1].type.name)",
         "",
         "s.export({",
-        "  pokemon = resp.body,",
+        "  pokemon = mon,",
         "})"
       ]
     },
@@ -29,9 +28,6 @@
         "",
         "local res = s.execute('Req1')",
         "",
-        "local weight = s.drill_json('weight', res.pokemon)",
-        "local id = s.drill_json('id', res.pokemon)",
-        "",
         "local k = require('sqump_kafka')",
         "local brokers = {'localhost:9092'}",
         "local topic = 'weights'",
@@ -39,7 +35,7 @@
         "k.provision_topic(brokers, topic)",
         "",
         "local p = k.new_producer(brokers, topic, 5)",
-        "p:write(tostring(id), tostring(weight))",
+        "p:write(tostring(re.pokemon.id), tostring(res.pokemon.weight))",
         "p:close()",
         "print('done writing!')"
       ]

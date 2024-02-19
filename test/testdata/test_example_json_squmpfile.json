@@ -1,0 +1,58 @@
+{
+  "version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "name": "json_operations",
+  "requests": [
+    {
+      "name": "from_json",
+      "script": [
+        "local s = require('sqump')",
+        "",
+        "local val = s.from_json('true')",
+        "assert(val == true)",
+        "",
+        "local val = s.from_json('1')",
+        "assert(val == 1)",
+        "",
+        "local val = s.from_json('2.5')",
+        "assert(val == 2.5)",
+        "",
+        "local val = s.from_json('\"hello\"')",
+        "assert(val == 'hello')",
+        "",
+        "local val = s.from_json('{\"field\": 1}')",
+        "assert(val.field == 1)",
+        "",
+        "local val = s.from_json('[1,2,3]')",
+        "for i, v in ipairs(val) do",
+        "  assert(i == v)",
+        "end"
+      ]
+    },
+    {
+      "name": "to_json",
+      "script": [
+        "local s = require('sqump')",
+        "",
+        "local val = {",
+        "  bool = true,",
+        "  num = 1,",
+        "  string = \"a string\",",
+        "  arr = { 1, 2, 3 },",
+        "  map = {",
+        "    field = \"value\",",
+        "    next = \"another\",",
+        "  }",
+        "}",
+        "",
+        "assert(s.to_json(val) == '{\"arr\":[1,2,3],\"bool\":true,\"map\":{\"field\":\"value\",\"next\":\"another\"},\"num\":1,\"string\":\"a string\"}')"
+      ]
+    }
+  ],
+  "environment": {
+    "staging": {}
+  }
+}

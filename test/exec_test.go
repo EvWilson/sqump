@@ -11,6 +11,20 @@ import (
 	"github.com/EvWilson/sqump/test/example"
 )
 
+func setup(t *testing.T, confPath, filePath string) (*Tmpfile, *Tmpfile) {
+	tmpConf, err := CreateTmpfile(confPath)
+	assert(t, err == nil, "create conf")
+	tmpFile, err := CreateTmpfile(filePath)
+	assert(t, err == nil, "create file")
+	t.Cleanup(func() {
+		_ = tmpConf.Cleanup()
+		assert(t, err == nil, "cleanup conf")
+		_ = tmpFile.Cleanup()
+		assert(t, err == nil, "cleanup file")
+	})
+	return tmpConf, tmpFile
+}
+
 func TestExample(t *testing.T) {
 	prnt.SetPrinter(&prnt.StandardPrinter{})
 
@@ -21,20 +35,6 @@ func TestExample(t *testing.T) {
 			fmt.Println("error from mux termination:", err)
 		}
 	}()
-
-	setup := func(t *testing.T, confPath, filePath string) (*Tmpfile, *Tmpfile) {
-		tmpConf, err := CreateTmpfile(confPath)
-		assert(t, err == nil, "create conf")
-		tmpFile, err := CreateTmpfile(filePath)
-		assert(t, err == nil, "create file")
-		t.Cleanup(func() {
-			_ = tmpConf.Cleanup()
-			assert(t, err == nil, "cleanup conf")
-			_ = tmpFile.Cleanup()
-			assert(t, err == nil, "cleanup file")
-		})
-		return tmpConf, tmpFile
-	}
 
 	t.Run("Basic", func(t *testing.T) {
 		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
@@ -87,22 +87,6 @@ func TestExample(t *testing.T) {
 		_, err = exec.ExecuteRequest(coll, "A", conf, data.EnvMapValue{
 			"two": "2",
 		}, make(exec.LoopChecker))
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("Test JSON drilling", func(t *testing.T) {
-		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
-		conf, err := data.ReadConfigFrom(tmpConf.F.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
-		coll, err := data.ReadCollection(tmpFile.F.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = exec.ExecuteRequest(coll, "C", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}

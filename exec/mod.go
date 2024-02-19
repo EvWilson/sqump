@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -64,7 +62,8 @@ func CreateState(
 			"export":         state.export,
 			"fetch":          state.fetch,
 			"print_response": state.printResponse,
-			"drill_json":     state.drillJSON,
+			"to_json":        state.toJSON,
+			"from_json":      state.fromJSON,
 		})
 		L.Push(mod)
 		return 1
@@ -280,73 +279,26 @@ func (s *State) printResponse(_ *lua.LState) int {
 	return 0
 }
 
-func (s *State) drillJSON(_ *lua.LState) int {
-	queryVal := s.LState.Get(1)
-	if queryVal.Type() != lua.LTString {
-		return s.CancelErr("error: drill_json: expected query parameter to be string, instead got: %s", queryVal.Type().String())
-	}
-	query := lua.LVAsString(queryVal)
-	jsonVal := s.LState.Get(2)
-	if jsonVal.Type() != lua.LTString {
-		return s.CancelErr("error: drill_json: expected json parameter to be string, instead got: %s", jsonVal.Type().String())
-	}
-	data := lua.LVAsString(jsonVal)
-
-	var v any
-	err := json.Unmarshal([]byte(data), &v)
+func (s *State) toJSON(_ *lua.LState) int {
+	b, err := marshalLValue(s.LState.Get(1))
 	if err != nil {
-		return s.CancelErr("error: drill_json: while unmarshalling '%s': %v", data, err)
+		return s.CancelErr("error: to_json: error serializing to JSON: %v", err)
 	}
+	s.LState.Push(lua.LString(b))
+	return 1
+}
 
-	pieces := strings.Split(query, ".")
-	for i, piece := range pieces {
-		if piece == "" {
-			return s.CancelErr("error: drill_json: got blank field in query '%s'", query)
-		}
-		switch resolved := v.(type) {
-		case map[string]any:
-			val, ok := resolved[piece]
-			if !ok {
-				return s.CancelErr("error: drill_json: no field '%s' found in object: %v", piece, resolved)
-			}
-			v = val
-		case []any:
-			idx, err := strconv.Atoi(piece)
-			if err != nil {
-				return s.CancelErr("error: drill_json: query section '%s' could not be converted to array index for JSON array '%v' due to: %v", piece, resolved, err)
-			}
-			if idx < 1 {
-				return s.CancelErr("error: drill_json: query index '%d' less than 1, thus not valid", idx)
-			}
-			v = resolved[idx-1]
-		case bool, string, float64, int, nil:
-			if i != len(pieces)-1 {
-				return s.CancelErr("error: drill_json: end value '%v' encountered before end of query '%s'", v, query)
-			}
-			lVal, err := anyToLValue(resolved)
-			if err != nil {
-				return s.CancelErr("error: drill_json: while converting discrete value to Lua value: %v", err)
-			}
-			s.LState.Push(lVal)
-			return 1
-		default:
-			return s.CancelErr("error: drill_json: found unexpected type value '%v' for '%v'", reflect.TypeOf(resolved), resolved)
-		}
+func (s *State) fromJSON(_ *lua.LState) int {
+	payload, err := getStringParam(s.LState, "json", 1)
+	if err != nil {
+		return s.CancelErr("error: from_json: %v", err)
 	}
-	switch resolved := v.(type) {
-	case map[string]any, []any:
-		s.LState.Push(lua.LString(fmt.Sprintf("%v", resolved)))
-		return 1
-	case bool, string, float64, int, nil:
-		lVal, err := anyToLValue(resolved)
-		if err != nil {
-			return s.CancelErr("error: drill_json: while converting discrete value to Lua value: %v", err)
-		}
-		s.LState.Push(lVal)
-		return 1
-	default:
-		return s.CancelErr("error: drill_json: encountered unexpected data type post-loop: %v", reflect.TypeOf(v))
+	lv, err := parseJSONString([]byte(payload))
+	if err != nil {
+		return s.CancelErr("error: from_json: error parsing JSON string: %v", err)
 	}
+	s.LState.Push(lv)
+	return 1
 }
 
 func printViaCore(L *lua.LState) int {

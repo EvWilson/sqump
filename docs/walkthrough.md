@@ -62,13 +62,14 @@ local s = require('sqump')
 
 local resp = s.fetch('https://pokeapi.co/api/v2/pokemon/{{.pokemon}}')
 
-print(s.drill_json('id', resp.body), s.drill_json('types.1.type.name', resp.body))
+local mon = s.from_json(resp.body)
+print(mon.id, mon.types[1].type.name)
 
 s.export({
-  pokemon = resp.body,
+  pokemon = mon,
 })
 ```
-With this, we can check Pikachu's Pokédex ID and the name of his typing, then export the data we gathered to be used by another script! Heads up for the 1-based Lua indexing in `drill_json`. Next, we'll look at starting to use this information in another script.
+With this, we can check Pikachu's Pokédex ID and the name of his typing, then export the data we gathered to be used by another script! Heads up for the 1-based Lua indexing when accessing JSON array indices. Next, we'll look at starting to use this information in another script.
 
 ### Bringing in Kafka
 For this next portion, we'll assume that you have Docker installed. We'll be using it to run the `docker-compose.yml` file in this directory to bring up a local Kafka instance to test with.
@@ -81,9 +82,6 @@ local s = require('sqump')
 
 local res = s.execute('Req1')
 
-local weight = s.drill_json('weight', res.pokemon)
-local id = s.drill_json('id', res.pokemon)
-
 local k = require('sqump_kafka')
 local brokers = {'localhost:9092'}
 local topic = 'weights'
@@ -91,7 +89,7 @@ local topic = 'weights'
 k.provision_topic(brokers, topic)
 
 local p = k.new_producer(brokers, topic, 5)
-p:write(tostring(id), tostring(weight))
+p:write(tostring(re.pokemon.id), tostring(res.pokemon.weight))
 p:close()
 print('done writing!')
 ```

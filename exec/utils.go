@@ -2,7 +2,6 @@ package exec
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 
 	lua "github.com/yuin/gopher-lua"
@@ -147,21 +146,4 @@ func luaArrayToSlice(val lua.LValue) ([]string, error) {
 		strs = append(strs, l2.String())
 	})
 	return strs, nil
-}
-
-func anyToLValue(arg any) (lua.LValue, error) {
-	switch resolved := arg.(type) {
-	case string:
-		return lua.LString(resolved), nil
-	case float64:
-		return lua.LNumber(resolved), nil
-	case int:
-		return lua.LNumber(resolved), nil
-	case bool:
-		return lua.LBool(resolved), nil
-	case nil:
-		return lua.LNil, nil
-	default:
-		return lua.LNil, fmt.Errorf("no compatible Lua value found for '%v' of type '%v'", arg, reflect.TypeOf(arg))
-	}
 }
