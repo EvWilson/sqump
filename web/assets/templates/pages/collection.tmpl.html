@@ -1,8 +1,15 @@
 {{define "title"}}Collection{{end}}
 {{define "main"}}
-<a href="/">&lt;&lt; Home</a>
-
-<h3>{{.Name}}</h3>
+<nav>
+	<ul class="request-nav">
+		<li class="request-nav-crumb">
+			<a class="crumb" href="/">Home</a>
+		</li>
+		<li class="request-nav-crumb">
+			{{.Name}}
+		</li>
+	</ul>
+</nav>
 
 <div class="flex-container">
 	<div class="flex-smaller">

@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"net/url"
 	"text/template"
 )
 
@@ -13,12 +14,15 @@ func NewTemplateCache() (TemplateCache, error) {
 	if err != nil {
 		return nil, err
 	}
+	templFuncs := template.FuncMap{
+		"pathescape": url.PathEscape,
+	}
 	for _, page := range pages {
 		files := []string{
 			"assets/templates/index.tmpl.html",
 			fmt.Sprintf("assets/templates/pages/%s", page.Name()),
 		}
-		ts, err := template.ParseFS(assets, files...)
+		ts, err := template.New(page.Name()).Funcs(templFuncs).ParseFS(assets, files...)
 		if err != nil {
 			return nil, err
 		}

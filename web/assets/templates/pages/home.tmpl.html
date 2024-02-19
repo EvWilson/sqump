@@ -5,7 +5,7 @@
 		<h3>Collections</h3>
 		<ul>
 			{{range .Files}}
-			{{$ep := .EscapedPath}}
+			{{$ep := .Path | pathescape}}
 			<li>
 				<a href="/collection/{{$ep}}">{{.Name}}</a>
 				<span class="fade">
@@ -16,7 +16,7 @@
 			</li>
 			<ul>
 				{{range .Requests}}
-				<li><a href="/collection/{{$ep}}/request/{{.Name}}">{{.Name}}</a></li>
+				<li><a href="/collection/{{$ep}}/request/{{$ep}}">{{.Name}}</a></li>
 				{{end}}
 			</ul>
 			{{end}}
@@ -32,7 +32,6 @@
 	</div>
 </div>
 
-<script language="javascript" type="text/javascript" charset="utf-8" src="/editor/json-bundle.min.js"></script>
 <script>
 const autoregister = async () => {
 	await fetch("/autoregister", {

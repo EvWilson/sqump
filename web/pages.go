@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
@@ -25,28 +24,19 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 		r.ServerError(w, err)
 		return
 	}
-	type fileInfo struct {
-		EscapedPath string
-		Name        string
-		Requests    []data.Request
-	}
-	info := make([]fileInfo, 0, len(files))
+	info := make([]data.Collection, 0, len(files))
 	for _, path := range files {
 		coll, err := handlers.GetCollection(path)
 		if err != nil {
 			r.ServerError(w, err)
 			return
 		}
-		info = append(info, fileInfo{
-			EscapedPath: url.PathEscape(strings.TrimPrefix(path, "/")),
-			Name:        coll.Name,
-			Requests:    coll.Requests,
-		})
+		info = append(info, *coll)
 	}
 	r.Render(w, 200, "home.tmpl.html", struct {
 		CoreEnvironmentText string
 		CurrentEnvironment  string
-		Files               []fileInfo
+		Files               []data.Collection
 		Error               string
 	}{
 		CurrentEnvironment: conf.CurrentEnv,

@@ -25,9 +25,8 @@
 		<div class="listbox half">
 			<nav>
 				<ul class="request-links">
-					{{$collPath := .CollectionPath}}
 					{{range .Requests}}
-					<li><a href="/collection/{{$collPath}}/request/{{.Name}}">{{.Name}}</a></li>
+					<li><a href="/collection/{{$.CollectionPath}}/request/{{.Name | pathescape}}">{{.Name}}</a></li>
 					{{end}}
 				</ul>
 			</nav>
