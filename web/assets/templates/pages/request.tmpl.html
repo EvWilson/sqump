@@ -17,10 +17,12 @@
 		<h3>Requests</h3>
 		<div class="listbox half">
 			<nav>
-				{{$collPath := .CollectionPath}}
-				{{range .Requests}}
-				<a href="/collection/{{$collPath}}/request/{{.Name}}">{{.Name}}</a>
-				{{end}}
+				<ul class="request-links">
+					{{$collPath := .CollectionPath}}
+					{{range .Requests}}
+					<li><a href="/collection/{{$collPath}}/request/{{.Name}}">{{.Name}}</a></li>
+					{{end}}
+				</ul>
 			</nav>
 		</div>
 	</div>
