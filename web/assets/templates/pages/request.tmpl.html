@@ -1,16 +1,23 @@
 {{define "title"}}Request{{end}}
 {{define "main"}}
 <div class="flex-container">
-	<div class="flex-container flex-column">
-		<div class="flex-smaller"><a href="/">&lt;&lt; Home</a></div>
-		<div class="flex-smaller"><a href="/collection/{{.EscapedPath}}">&lt;&lt; Back to Collection</a></div>
-	</div>
+	<nav>
+		<ul class="request-nav">
+			<li class="request-nav-crumb">
+				<a class="crumb" href="/">Home</a>
+			</li>
+			<li class="request-nav-crumb">
+				<a class="crumb" href="/collection/{{.EscapedPath}}">{{.CollectionName}}</a>
+			</li>
+			<li class="request-nav-crumb">
+				{{.Name}}
+			</li>
+		</ul>
+	</nav>
 	<div class="right-justify">
 		<a href="https://github.com/EvWilson/sqump/tree/main/docs">Documentation</a>
 	</div>
 </div>
-
-<h3>{{.CollectionName}} - {{.Name}}</h3>
 
 <div class="flex-container">
 	<div class="flex-smallest">
@@ -38,22 +45,24 @@
 	</div>
 	<div class="flex-smaller">
 		<h3>{{.EnvScope}} Environment</h3>
-		<form action="/current-env" method="POST">
-			<span>Current:</span>
-			<input type="text" id="current" name="current" value="{{.CurrentEnvironment}}" />
-			<input type="submit" value="Submit" />
-		</form>
-		<form action="/collection/{{.EscapedPath}}/config" method="POST">
-			<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
-			<div id="json-editor" class="half"></div>
-			<input type="hidden" name="name" value="{{.Name}}" />
-			<label for="scope">Scope:</label>
-			<select id="scope" name="scope" onchange="loadScope(value)">
-				<option value="collection">Collection</option>
-				<option value="temp">Temporary</option>
-			</select>
-			<input id="json-submit" type="submit" value="Save">
-		</form>
+		<div class="half">
+			<form action="/current-env" method="POST">
+				<span>Current:</span>
+				<input type="text" id="current" name="current" value="{{.CurrentEnvironment}}" />
+				<input type="submit" value="Submit" />
+			</form>
+			<form action="/collection/{{.EscapedPath}}/config" method="POST">
+				<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
+				<div id="json-editor"></div>
+				<input type="hidden" name="name" value="{{.Name}}" />
+				<label for="scope">Scope:</label>
+				<select id="scope" name="scope" onchange="loadScope(value)">
+					<option value="collection">Collection</option>
+					<option value="temp">Temporary</option>
+				</select>
+				<input id="json-submit" type="submit" value="Save">
+			</form>
+		</div>
 	</div>
 </div>
 <div>
