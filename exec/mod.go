@@ -30,6 +30,22 @@ type State struct {
 
 type LoopChecker map[string]bool
 
+func NewLoopChecker() LoopChecker {
+	return make(LoopChecker)
+}
+
+func (lc LoopChecker) AddIdent(ident Identifier) bool {
+	if _, ok := lc[ident.String()]; ok {
+		return false
+	}
+	lc[ident.String()] = true
+	return true
+}
+
+func (lc LoopChecker) ClearIdent(ident Identifier) {
+	delete(lc, ident.String())
+}
+
 type ExportMap map[string]*lua.LTable
 
 func CreateState(
@@ -53,7 +69,7 @@ func CreateState(
 		cancel:       cancel,
 		err:          nil,
 	}
-	state.loopCheck[state.currentIdent.String()] = true
+	state.loopCheck.AddIdent(state.currentIdent)
 
 	L.SetGlobal("print", L.NewFunction(printViaCore))
 	L.PreloadModule("sqump", func(l *lua.LState) int {
@@ -198,9 +214,10 @@ func (s *State) execute(_ *lua.LState) int {
 	ident := s.currentIdent
 	ident.Request = request
 
-	if _, ok := s.loopCheck[ident.String()]; ok {
+	if !s.loopCheck.AddIdent(ident) {
 		return s.CancelErr("error: execute: cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
 	}
+	defer s.loopCheck.ClearIdent(ident)
 
 	coll, err := data.ReadCollection(ident.Path)
 	if err != nil {

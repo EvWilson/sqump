@@ -7,6 +7,22 @@
   "name": "A_Basic_Test_Squmpfile",
   "requests": [
     {
+      "name": "Cycle1",
+      "script": [
+        "local s = require('sqump')",
+        "",
+        "s.execute('Cycle2')"
+      ]
+    },
+    {
+      "name": "Cycle2",
+      "script": [
+        "local s = require('sqump')",
+        "",
+        "s.execute('Cycle1')"
+      ]
+    },
+    {
       "name": "GetAuth",
       "script": [
         "local s = require('sqump')",

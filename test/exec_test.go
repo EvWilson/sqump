@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/EvWilson/sqump/data"
@@ -52,7 +53,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "GetAuth", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "GetAuth", conf, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,9 +69,25 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "GetPayload", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "GetPayload", conf, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
+		}
+	})
+
+	t.Run("Error on cyclical script execution", func(t *testing.T) {
+		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_basic_squmpfile.json")
+		conf, err := data.ReadConfigFrom(tmpConf.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		coll, err := data.ReadCollection(tmpFile.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = exec.ExecuteRequest(coll, "Cycle1", conf, make(data.EnvMapValue), exec.NewLoopChecker())
+		if err == nil || !strings.Contains(err.Error(), "cyclical") {
+			t.Fatal("cyclical script execution did not create proper error")
 		}
 	})
 
@@ -86,7 +103,7 @@ func TestExample(t *testing.T) {
 		}
 		_, err = exec.ExecuteRequest(coll, "AssertFromEnvAndManualOverride", conf, data.EnvMapValue{
 			"two": "2",
-		}, make(exec.LoopChecker))
+		}, exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +119,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "PassOverride", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "PassOverride", conf, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}

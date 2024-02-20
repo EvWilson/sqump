@@ -16,6 +16,6 @@ func ExecuteRequest(fpath, requestName string, overrides data.EnvMapValue) error
 	if err != nil {
 		return err
 	}
-	_, err = exec.ExecuteRequest(coll, requestName, conf, overrides, make(exec.LoopChecker))
+	_, err = exec.ExecuteRequest(coll, requestName, conf, overrides, exec.NewLoopChecker())
 	return err
 }
