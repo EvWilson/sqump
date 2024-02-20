@@ -7,18 +7,34 @@
   "name": "A_Multi_Env_Squmpfile",
   "requests": [
     {
-      "name": "A",
+      "name": "AssertFromEnvAndManualOverride",
       "script": [
         "assert(\"{{.zero}}\" == \"0\", \"A 0\")",
         "assert(\"{{.one}}\" == \"one\", \"A 1\")",
         "assert(\"{{.two}}\" == \"2\", \"A 2\")"
       ]
+    },
+    {
+      "name": "AssertOnOverride",
+      "script": [
+        "assert({{.override}} == 5)"
+      ]
+    },
+    {
+      "name": "PassOverride",
+      "script": [
+        "local s = require('sqump')",
+        "",
+        "s.execute('AssertOnOverride', {",
+        "    override = '5',",
+        "})"
+      ]
     }
   ],
   "environment": {
     "staging": {
-      "zero": "0",
-      "one": "one"
+      "one": "one",
+      "zero": "0"
     }
   }
 }

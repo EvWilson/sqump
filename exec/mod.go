@@ -190,6 +190,10 @@ func (s *State) execute(_ *lua.LState) int {
 	if err != nil {
 		return s.CancelErr("error: execute: %v", err)
 	}
+	overrides, err := getMapParamOrNil(s.LState, "overrides", 2)
+	if err != nil {
+		return s.CancelErr("error: execute: %v", err)
+	}
 
 	ident := s.currentIdent
 	ident.Request = request
@@ -202,7 +206,7 @@ func (s *State) execute(_ *lua.LState) int {
 	if err != nil {
 		return s.CancelErr("error: execute: while reading collection at '%s': %v", ident.Path, err)
 	}
-	state, err := ExecuteRequest(coll, request, s.config, s.environment, s.loopCheck)
+	state, err := ExecuteRequest(coll, request, s.config, mergeMaps(s.environment, overrides), s.loopCheck)
 	if err != nil {
 		return s.CancelErr("error: execute: while performing request '%s': %v", request, err)
 	}

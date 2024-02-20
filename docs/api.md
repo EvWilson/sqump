@@ -12,9 +12,12 @@ execute(request) -> data
     Returns:
         data - table, the data returned by the specified request
 
-export(tbl)
+export(tbl, overrides)
     Parameters:
-        tbl - table, data to be made available to subsequent chained scripts
+        tbl       - table, data to be made available to subsequent chained scripts
+        overrides - optional table, with table fields becoming environment overrides for all child scripts
+    Notes:
+        The optional overrides table can only hold strings as the values for the moment.
 
 fetch(resource, options) -> response
     Parameters:

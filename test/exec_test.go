@@ -52,7 +52,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "A", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "GetAuth", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +68,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "B", conf, make(data.EnvMapValue), make(exec.LoopChecker))
+		_, err = exec.ExecuteRequest(coll, "GetPayload", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -84,9 +84,25 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "A", conf, data.EnvMapValue{
+		_, err = exec.ExecuteRequest(coll, "AssertFromEnvAndManualOverride", conf, data.EnvMapValue{
 			"two": "2",
 		}, make(exec.LoopChecker))
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("Override in execute call", func(t *testing.T) {
+		tmpConf, tmpFile := setup(t, "testdata/test_example_config.json", "testdata/test_example_multi_env_squmpfile.json")
+		conf, err := data.ReadConfigFrom(tmpConf.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		coll, err := data.ReadCollection(tmpFile.F.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = exec.ExecuteRequest(coll, "PassOverride", conf, make(data.EnvMapValue), make(exec.LoopChecker))
 		if err != nil {
 			t.Fatal(err)
 		}

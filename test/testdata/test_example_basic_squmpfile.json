@@ -7,7 +7,7 @@
   "name": "A_Basic_Test_Squmpfile",
   "requests": [
     {
-      "name": "A",
+      "name": "GetAuth",
       "script": [
         "local s = require('sqump')",
         "",
@@ -25,11 +25,11 @@
       ]
     },
     {
-      "name": "B",
+      "name": "GetPayload",
       "script": [
         "local s = require('sqump')",
         "",
-        "local a = s.execute('A')",
+        "local a = s.execute('GetAuth')",
         "",
         "local resp = s.fetch('http://localhost:5310/createThing', {",
         "\tmethod = 'POST',",
