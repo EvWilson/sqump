@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/web/middleware"
 	"github.com/EvWilson/sqump/web/stores"
 	"github.com/EvWilson/sqump/web/util"
 )
@@ -35,7 +36,7 @@ func (r *Router) setCurrentEnv(ces stores.CurrentEnvService) http.HandlerFunc {
 	}
 }
 
-func (r *Router) handleCollectionConfig(tcs stores.TempConfigService) http.HandlerFunc {
+func (r *Router) handleCollectionConfig(isReadonly bool, tcs stores.TempConfigService) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		err := req.ParseForm()
 		if err != nil {
@@ -65,6 +66,10 @@ func (r *Router) handleCollectionConfig(tcs stores.TempConfigService) http.Handl
 		}
 		switch scope {
 		case "collection":
+			if isReadonly {
+				middleware.HandleReadonlyCondition(w)
+				return
+			}
 			envMap, err := util.ConfigMap(req)
 			if err != nil {
 				r.ServerError(w, err)

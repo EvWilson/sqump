@@ -65,7 +65,7 @@ func NewRouter(isReadonly bool) (*Router, error) {
 	// These routes have a special case with the readonly mode
 	mux.Group(func(plainMux chi.Router) {
 		plainMux.Post("/current-env", r.setCurrentEnv(ces))
-		plainMux.Post("/collection/{path}/config", r.handleCollectionConfig(tcs))
+		plainMux.Post("/collection/{path}/config", r.handleCollectionConfig(isReadonly, tcs))
 	})
 
 	// These obey normal readonly mode rules
