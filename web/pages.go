@@ -69,14 +69,14 @@ func (r *Router) showCollection(ces stores.CurrentEnvService) http.HandlerFunc {
 		}
 		r.Render(w, 200, "collection.tmpl.html", struct {
 			Name               string
-			EscapedPath        string
+			Path               string
 			EnvironmentText    string
 			CurrentEnvironment string
 			Requests           []data.Request
 			Error              string
 		}{
 			Name:               coll.Name,
-			EscapedPath:        url.PathEscape(path),
+			Path:               path,
 			EnvironmentText:    string(envBytes),
 			CurrentEnvironment: currentEnv,
 			Requests:           coll.Requests,
@@ -135,7 +135,6 @@ func (r *Router) showRequest(ces stores.CurrentEnvService, tcs stores.TempConfig
 			return
 		}
 		r.Render(w, 200, "request.tmpl.html", struct {
-			EscapedPath        string
 			CollectionName     string
 			CollectionPath     string
 			Requests           []data.Request
@@ -147,9 +146,8 @@ func (r *Router) showRequest(ces stores.CurrentEnvService, tcs stores.TempConfig
 			EnvScope           string
 			Error              string
 		}{
-			EscapedPath:        url.PathEscape(path),
 			CollectionName:     coll.Name,
-			CollectionPath:     url.PathEscape(coll.Path),
+			CollectionPath:     coll.Path,
 			Requests:           coll.Requests,
 			Name:               name,
 			EditText:           request.Script.String(),

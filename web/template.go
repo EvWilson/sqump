@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"text/template"
 )
 
@@ -16,6 +17,7 @@ func NewTemplateCache() (TemplateCache, error) {
 	}
 	templFuncs := template.FuncMap{
 		"pathescape": url.PathEscape,
+		"trim":       trimSlashes,
 	}
 	for _, page := range pages {
 		files := []string{
@@ -29,4 +31,8 @@ func NewTemplateCache() (TemplateCache, error) {
 		cache[page.Name()] = ts
 	}
 	return cache, nil
+}
+
+func trimSlashes(path string) string {
+	return strings.Trim(path, "/")
 }

@@ -1,5 +1,6 @@
 {{define "title"}}Request{{end}}
 {{define "main"}}
+{{$path := .CollectionPath | trim | pathescape}}
 <div class="flex-container">
 	<nav>
 		<ul class="request-nav">
@@ -7,7 +8,7 @@
 				<a class="crumb" href="/">Home</a>
 			</li>
 			<li class="request-nav-crumb">
-				<a class="crumb" href="/collection/{{.EscapedPath}}">{{.CollectionName}}</a>
+				<a class="crumb" href="/collection/{{$path}}">{{.CollectionName}}</a>
 			</li>
 			<li class="request-nav-crumb">
 				{{.Name}}
@@ -26,7 +27,7 @@
 			<nav>
 				<ul class="request-links">
 					{{range .Requests}}
-					<li><a href="/collection/{{$.CollectionPath}}/request/{{.Name | pathescape}}">{{.Name}}</a></li>
+					<li><a href="/collection/{{$path}}/request/{{.Name | pathescape}}">{{.Name}}</a></li>
 					{{end}}
 				</ul>
 			</nav>
@@ -34,12 +35,12 @@
 	</div>
 	<div class="flex-bigger">
 		<h3>Edit</h3>
-		<form action="/collection/{{.EscapedPath}}/request/{{.Name}}/edit-script" method="POST">
+		<form action="/collection/{{$path}}/request/{{.Name}}/edit-script" method="POST">
 			<textarea id="lua-editarea" name="edit" hidden>{{.EditText}}</textarea>
 			<div id="lua-editor" class="half"></div>
 			<input id="lua-submit" type="submit" value="Save">
-			<button id="lua-exec" type="button" onclick="execRequest('{{.EscapedPath}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
-			<button id="lua-view" type="button" onclick="viewRequest('{{.EscapedPath}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
+			<button id="lua-exec" type="button" onclick="execRequest('{{$path}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
+			<button id="lua-view" type="button" onclick="viewRequest('{{$path}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
 		</form>
 	</div>
 	<div class="flex-smaller">
@@ -50,7 +51,7 @@
 				<input type="text" id="current" name="current" value="{{.CurrentEnvironment}}" />
 				<input type="submit" value="Submit" />
 			</form>
-			<form action="/collection/{{.EscapedPath}}/config" method="POST">
+			<form action="/collection/{{$path}}/config" method="POST">
 				<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
 				<div id="json-editor"></div>
 				<input type="hidden" name="name" value="{{.Name}}" />

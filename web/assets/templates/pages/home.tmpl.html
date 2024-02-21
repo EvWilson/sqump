@@ -5,7 +5,7 @@
 		<h3>Collections</h3>
 		<ul>
 			{{range .Files}}
-			{{$ep := .Path | pathescape}}
+			{{$ep := .Path | trim | pathescape}}
 			<li>
 				<a href="/collection/{{$ep}}">{{.Name}}</a>
 				<span class="fade">

@@ -11,21 +11,22 @@
 	</ul>
 </nav>
 
+{{$ep := .Path | trim | pathescape}}
 <div class="flex-container">
 	<div class="flex-smaller">
 		<h3>Requests</h3>
 		<ul>
 			{{range .Requests}}
 			<li>
-				<a href="/collection/{{$.EscapedPath}}/request/{{.Name}}">{{.Name}}</a>
+				<a href="/collection/{{$ep}}/request/{{.Name}}">{{.Name}}</a>
 				<span class="fade">
-					- <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Name}}/rename">Rename</a>
-					- <a class="fade" href="/collection/{{$.EscapedPath}}/request/{{.Name}}/delete">Delete</a>
+					- <a class="fade" href="/collection/{{$ep}}/request/{{.Name}}/rename">Rename</a>
+					- <a class="fade" href="/collection/{{$ep}}/request/{{.Name}}/delete">Delete</a>
 				</span>
 			</li>
 			{{end}}
 		</ul>
-		<form action="/collection/{{.EscapedPath}}/request/create/new" method="POST">
+		<form action="/collection/{{$ep}}/request/create/new" method="POST">
 			<span>Create new request:</span>
 			<input type="text" name="name" />
 			<input type="submit" value="Submit" />
@@ -39,7 +40,7 @@
 			<input type="text" name="current" value="{{.CurrentEnvironment}}" />
 			<input type="submit" value="Submit" />
 		</form>
-		<form action="/collection/{{.EscapedPath}}/config" method="POST">
+		<form action="/collection/{{$ep}}/config" method="POST">
 			<textarea id="json-editarea" name="config" hidden>{{.EnvironmentText}}</textarea>
 			<div id="json-editor" class="half"></div>
 			<input type="hidden" name="scope" value="collection" />
