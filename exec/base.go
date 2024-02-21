@@ -23,7 +23,7 @@ func (i Identifier) String() string {
 func PrepareScript(
 	coll *data.Collection,
 	requestName string,
-	conf *data.Config,
+	currentEnv string,
 	overrides data.EnvMapValue,
 ) (string, data.EnvMapValue, error) {
 	req, ok := coll.GetRequest(requestName)
@@ -38,17 +38,17 @@ func PrepareScript(
 		Collection: coll.Name,
 		Request:    requestName,
 	}
-	return prepScript(conf, ident, req.Script.String(), coll.Environment, overrides)
+	return prepScript(currentEnv, ident, req.Script.String(), coll.Environment, overrides)
 }
 
 func prepScript(
-	conf *data.Config,
+	currentEnv string,
 	ident Identifier,
 	script string,
 	requestEnv data.EnvMap,
 	overrides data.EnvMapValue,
 ) (string, data.EnvMapValue, error) {
-	mergedEnv, err := getMergedEnv(conf.CurrentEnv, requestEnv, overrides)
+	mergedEnv, err := getMergedEnv(currentEnv, requestEnv, overrides)
 	if err != nil {
 		return "", nil, err
 	}
@@ -63,7 +63,7 @@ func prepScript(
 func ExecuteRequest(
 	coll *data.Collection,
 	requestName string,
-	conf *data.Config,
+	currentEnv string,
 	overrides data.EnvMapValue,
 	loopCheck LoopChecker,
 ) (*State, error) {
@@ -80,12 +80,12 @@ func ExecuteRequest(
 		Request:    requestName,
 	}
 
-	script, mergedEnv, err := prepScript(conf, ident, req.Script.String(), coll.Environment, overrides)
+	script, mergedEnv, err := prepScript(currentEnv, ident, req.Script.String(), coll.Environment, overrides)
 	if err != nil {
 		return nil, err
 	}
 
-	state := CreateState(conf, ident, mergedEnv, loopCheck)
+	state := CreateState(ident, currentEnv, mergedEnv, loopCheck)
 	defer state.Close()
 
 	err = state.DoString(script)
@@ -121,7 +121,7 @@ func getMergedEnv(
 ) (data.EnvMapValue, error) {
 	collectionEnv, ok := squmpEnv[current]
 	if !ok {
-		return nil, fmt.Errorf("no matching environment found in collection for name: %s", current)
+		return nil, fmt.Errorf("no matching environment found for given key '%s'", current)
 	}
 	return mergeMaps(collectionEnv, overrides), nil
 }

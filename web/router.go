@@ -15,6 +15,7 @@ import (
 	"github.com/EvWilson/sqump/prnt"
 	"github.com/EvWilson/sqump/web/log"
 	"github.com/EvWilson/sqump/web/middleware"
+	"github.com/EvWilson/sqump/web/stores"
 	"github.com/EvWilson/sqump/web/util"
 
 	"github.com/go-chi/chi/v5"
@@ -37,8 +38,8 @@ func NewRouter(isReadonly bool) (*Router, error) {
 	l := log.NewLogger(logLevel)
 	mux.Use(
 		chiMiddleware.Recoverer,
+		middleware.IDHandler,
 		middleware.ErrorHandler,
-		middleware.ReadonlyMiddleware(isReadonly),
 		middleware.LoggingMiddleware(l),
 	)
 	tc, err := NewTemplateCache()
@@ -51,35 +52,50 @@ func NewRouter(isReadonly bool) (*Router, error) {
 		logLevel:  logLevel,
 		templates: tc,
 	}
-	mux.Get("/", r.showHome)
-	mux.Post("/current-env", r.setCurrentEnv)
-	mux.Get("/ws", r.handleSocketConnection())
-	mux.Post("/autoregister", r.performAutoregister)
-	mux.Post("/collection/create/new", r.createCollection)
-	mux.Route("/collection/{path}", func(mux chi.Router) {
-		mux.Get("/", r.showCollection)
-		mux.Post("/config", r.handleCollectionConfig)
-		mux.Get("/rename", r.showRenameCollection)
-		mux.Post("/rename", r.handleRenameCollection)
-		mux.Get("/unregister", r.showUnregisterCollection)
-		mux.Post("/unregister", r.handleUnregisterCollection)
-		mux.Get("/delete", r.showDeleteCollection)
-		mux.Post("/delete", r.handleDeleteCollection)
-		mux.Route("/request", func(mux chi.Router) {
-			mux.Post("/create/new", r.createRequest)
-			mux.Get("/{name}", r.showRequest)
-			mux.Post("/{name}/edit-script", r.updateRequestScript)
-			mux.Get("/{name}/rename", r.showRenameRequest)
-			mux.Post("/{name}/rename", r.handleRenameRequest)
-			mux.Get("/{name}/delete", r.showDeleteRequest)
-			mux.Post("/{name}/delete", r.performDeleteRequest)
-		})
-	})
+
 	subAssets, err := fs.Sub(assets, "assets")
 	if err != nil {
 		return nil, err
 	}
-	mux.Get("/*", http.FileServer(http.FS(subAssets)).ServeHTTP)
+
+	ces := stores.NewCurrentEnvService(isReadonly)
+	tcs := stores.NewTempConfigService(ces)
+	eps := stores.NewExecProxyService(ces, tcs)
+
+	// These routes have a special case with the readonly mode
+	mux.Group(func(plainMux chi.Router) {
+		plainMux.Post("/current-env", r.setCurrentEnv(ces))
+		plainMux.Post("/collection/{path}/config", r.handleCollectionConfig(tcs))
+	})
+
+	// These obey normal readonly mode rules
+	mux.Group(func(roMux chi.Router) {
+		roMux.Use(middleware.ReadonlyMiddleware(isReadonly))
+		roMux.Get("/", r.showHome)
+		roMux.Get("/ws", r.handleSocketConnection(eps))
+		roMux.Post("/autoregister", r.performAutoregister)
+		roMux.Post("/collection/create/new", r.createCollection)
+		roMux.Route("/collection/{path}", func(roMux chi.Router) {
+			roMux.Get("/", r.showCollection(ces))
+			roMux.Get("/rename", r.showRenameCollection)
+			roMux.Post("/rename", r.handleRenameCollection)
+			roMux.Get("/unregister", r.showUnregisterCollection)
+			roMux.Post("/unregister", r.handleUnregisterCollection)
+			roMux.Get("/delete", r.showDeleteCollection)
+			roMux.Post("/delete", r.handleDeleteCollection)
+			roMux.Route("/request", func(roMux chi.Router) {
+				roMux.Post("/create/new", r.createRequest)
+				roMux.Get("/{name}", r.showRequest(ces, tcs))
+				roMux.Post("/{name}/edit-script", r.updateRequestScript)
+				roMux.Get("/{name}/rename", r.showRenameRequest)
+				roMux.Post("/{name}/rename", r.handleRenameRequest)
+				roMux.Get("/{name}/delete", r.showDeleteRequest)
+				roMux.Post("/{name}/delete", r.performDeleteRequest)
+			})
+		})
+		roMux.Get("/*", http.FileServer(http.FS(subAssets)).ServeHTTP)
+	})
+
 	return r, nil
 }
 

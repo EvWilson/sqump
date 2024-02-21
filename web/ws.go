@@ -8,9 +8,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/EvWilson/sqump/data"
-	"github.com/EvWilson/sqump/handlers"
 	"github.com/EvWilson/sqump/prnt"
+	"github.com/EvWilson/sqump/web/stores"
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
@@ -48,8 +47,8 @@ type ExecResponsePayload struct {
 	OutputFragment string `json:"fragment"`
 }
 
-func (r *Router) handleSocketConnection() http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+func (r *Router) handleSocketConnection(eps stores.ExecProxyService) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
 		conn, _, _, err := ws.UpgradeHTTP(req, w)
 		if err != nil {
 			r.ServerError(w, err)
@@ -125,12 +124,12 @@ func (r *Router) handleSocketConnection() http.HandlerFunc {
 				r.l.Debug("received message", "command", cmd)
 				switch cmd.Command {
 				case "view":
-					err = handleViewCommand(conn, cmd.Payload)
+					err = handleViewCommand(eps, req, conn, cmd.Payload)
 					if err != nil {
 						prnt.Println("error encountered in view command:", err)
 					}
 				case "exec":
-					err = handleExecCommand(conn, cmd.Payload)
+					err = handleExecCommand(eps, req, conn, cmd.Payload)
 					if err != nil {
 						prnt.Println("error encountered in exec command:", err)
 					}
@@ -140,10 +139,15 @@ func (r *Router) handleSocketConnection() http.HandlerFunc {
 				}
 			}
 		}()
-	})
+	}
 }
 
-func handleViewCommand(conn net.Conn, payload json.RawMessage) error {
+func handleViewCommand(
+	eps stores.ExecProxyService,
+	r *http.Request,
+	conn net.Conn,
+	payload json.RawMessage,
+) error {
 	var vrp ViewRequestPayload
 	err := json.Unmarshal(payload, &vrp)
 	if err != nil {
@@ -153,15 +157,7 @@ func handleViewCommand(conn net.Conn, payload json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	var overrides data.EnvMapValue
-	if vrp.Scope == "temp" {
-		var ok bool
-		overrides, ok = getTempConfig()[vrp.Environment]
-		if !ok {
-			return fmt.Errorf("no overrides found for environment '%s'", vrp.Environment)
-		}
-	}
-	prepared, err := handlers.GetPreparedScript(fmt.Sprintf("/%s", path), vrp.Name, overrides)
+	prepared, err := eps.GetPreparedScript(fmt.Sprintf("/%s", path), vrp.Name, r)
 	if err != nil {
 		return err
 	}
@@ -177,7 +173,12 @@ func handleViewCommand(conn net.Conn, payload json.RawMessage) error {
 	return wsutil.WriteServerMessage(conn, ws.OpText, b)
 }
 
-func handleExecCommand(conn net.Conn, payload json.RawMessage) error {
+func handleExecCommand(
+	eps stores.ExecProxyService,
+	r *http.Request,
+	conn net.Conn,
+	payload json.RawMessage,
+) error {
 	err := sendClearCommand(conn)
 	if err != nil {
 		return err
@@ -191,15 +192,7 @@ func handleExecCommand(conn net.Conn, payload json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	var overrides data.EnvMapValue
-	if erp.Scope == "temp" {
-		var ok bool
-		overrides, ok = getTempConfig()[erp.Environment]
-		if !ok {
-			return fmt.Errorf("no overrides found for environment '%s'", erp.Environment)
-		}
-	}
-	err = handlers.ExecuteRequest(fmt.Sprintf("/%s", path), erp.Name, overrides)
+	err = eps.ExecuteRequest(fmt.Sprintf("/%s", path), erp.Name, r)
 	if err != nil {
 		return err
 	}

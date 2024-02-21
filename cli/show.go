@@ -23,13 +23,17 @@ func ShowOperation() *cmder.Op {
 
 func handleShow(ctx context.Context, args []string) error {
 	overrides := ctx.Value(cmder.OverrideContextKey).(map[string]string)
+	conf, err := handlers.GetConfig()
+	if err != nil {
+		return err
+	}
 	switch len(args) {
 	case 0:
-		filepath, requestName, err := handleShowFuzzy(overrides)
+		filepath, requestName, err := handleShowFuzzy(conf, overrides)
 		if err != nil {
 			return err
 		}
-		prepared, err := handlers.GetPreparedScript(filepath, requestName, overrides)
+		prepared, err := handlers.GetPreparedScript(filepath, requestName, conf.CurrentEnv, overrides)
 		if err != nil {
 			return err
 		}
@@ -38,7 +42,7 @@ func handleShow(ctx context.Context, args []string) error {
 		return nil
 	case 2:
 		filepath, requestName := args[0], args[1]
-		prepared, err := handlers.GetPreparedScript(filepath, requestName, overrides)
+		prepared, err := handlers.GetPreparedScript(filepath, requestName, conf.CurrentEnv, overrides)
 		if err != nil {
 			return err
 		}
@@ -50,13 +54,8 @@ func handleShow(ctx context.Context, args []string) error {
 	}
 }
 
-func handleShowFuzzy(overrides data.EnvMapValue) (string, string, error) {
+func handleShowFuzzy(conf *data.Config, overrides data.EnvMapValue) (string, string, error) {
 	options := make([]string, 0)
-
-	conf, err := handlers.GetConfig()
-	if err != nil {
-		return "", "", err
-	}
 
 	for _, path := range conf.Files {
 		coll, err := handlers.GetCollection(path)

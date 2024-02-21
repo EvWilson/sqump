@@ -18,7 +18,7 @@ func TestJSON(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "to_json", conf, make(data.EnvMapValue), exec.NewLoopChecker())
+		_, err = exec.ExecuteRequest(coll, "to_json", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -34,7 +34,7 @@ func TestJSON(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "from_json", conf, make(data.EnvMapValue), exec.NewLoopChecker())
+		_, err = exec.ExecuteRequest(coll, "from_json", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -6,6 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/gobwas/ws v1.3.2
+	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/ktr0731/go-fuzzyfinder v0.7.0
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/yuin/gopher-lua v1.1.0

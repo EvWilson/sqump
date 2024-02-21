@@ -35,7 +35,9 @@ func BuildRoot() *cmder.Root {
 			"readonly",
 			"Learn more about the '--readonly' option for 'webview'",
 			func(_ context.Context, _ []string) error {
-				fmt.Println(`Readonly mode: run 'webview' with this option to disable POST endpoints, allowing scripts to be run but not edited.`)
+				fmt.Println(`Readonly mode:
+Run 'webview' with this option to disable POST endpoints, allowing scripts to be run but not edited.
+Users are still able to set the current environment and temporary overrides, but these changes do not persist, and are scoped to their session.`)
 				return nil
 			},
 		),

@@ -53,7 +53,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "GetAuth", conf, make(data.EnvMapValue), exec.NewLoopChecker())
+		_, err = exec.ExecuteRequest(coll, "GetAuth", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,7 +69,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "GetPayload", conf, make(data.EnvMapValue), exec.NewLoopChecker())
+		_, err = exec.ExecuteRequest(coll, "GetPayload", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -85,7 +85,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "Cycle1", conf, make(data.EnvMapValue), exec.NewLoopChecker())
+		_, err = exec.ExecuteRequest(coll, "Cycle1", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err == nil || !strings.Contains(err.Error(), "cyclical") {
 			t.Fatal("cyclical script execution did not create proper error")
 		}
@@ -101,7 +101,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "AssertFromEnvAndManualOverride", conf, data.EnvMapValue{
+		_, err = exec.ExecuteRequest(coll, "AssertFromEnvAndManualOverride", conf.CurrentEnv, data.EnvMapValue{
 			"two": "2",
 		}, exec.NewLoopChecker())
 		if err != nil {
@@ -119,7 +119,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "PassOverride", conf, make(data.EnvMapValue), exec.NewLoopChecker())
+		_, err = exec.ExecuteRequest(coll, "PassOverride", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}

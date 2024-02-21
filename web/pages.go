@@ -8,6 +8,7 @@ import (
 
 	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/web/stores"
 	"github.com/EvWilson/sqump/web/util"
 
 	"github.com/go-chi/chi/v5"
@@ -45,112 +46,120 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-func (r *Router) showCollection(w http.ResponseWriter, req *http.Request) {
-	path, ok := getParamEscaped(r, w, req, "path")
-	if !ok {
-		return
+func (r *Router) showCollection(ces stores.CurrentEnvService) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		path, ok := getParamEscaped(r, w, req, "path")
+		if !ok {
+			return
+		}
+		coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		envBytes, err := json.MarshalIndent(coll.Environment, "", "  ")
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		currentEnv, err := ces.GetCurrentEnv(req)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		r.Render(w, 200, "collection.tmpl.html", struct {
+			Name               string
+			EscapedPath        string
+			EnvironmentText    string
+			CurrentEnvironment string
+			Requests           []data.Request
+			Error              string
+		}{
+			Name:               coll.Name,
+			EscapedPath:        url.PathEscape(path),
+			EnvironmentText:    string(envBytes),
+			CurrentEnvironment: currentEnv,
+			Requests:           coll.Requests,
+			Error:              util.GetErrorOnRequest(w, req),
+		})
 	}
-	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	envBytes, err := json.MarshalIndent(coll.Environment, "", "  ")
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	conf, err := handlers.GetConfig()
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	r.Render(w, 200, "collection.tmpl.html", struct {
-		Name               string
-		EscapedPath        string
-		EnvironmentText    string
-		CurrentEnvironment string
-		Requests           []data.Request
-		Error              string
-	}{
-		Name:               coll.Name,
-		EscapedPath:        url.PathEscape(path),
-		EnvironmentText:    string(envBytes),
-		CurrentEnvironment: conf.CurrentEnv,
-		Requests:           coll.Requests,
-		Error:              util.GetErrorOnRequest(w, req),
-	})
 }
 
-func (r *Router) showRequest(w http.ResponseWriter, req *http.Request) {
-	path, ok := getParamEscaped(r, w, req, "path")
-	if !ok {
-		return
+func (r *Router) showRequest(ces stores.CurrentEnvService, tcs stores.TempConfigService) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		path, ok := getParamEscaped(r, w, req, "path")
+		if !ok {
+			return
+		}
+		name, ok := getParamEscaped(r, w, req, "name")
+		if !ok {
+			return
+		}
+		coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		scope := req.URL.Query().Get("scope")
+		var envMap data.EnvMap
+		switch scope {
+		case "":
+			fallthrough
+		case "collection":
+			envMap = coll.Environment
+			scope = "Collection"
+		case "temp":
+			envMap, err = tcs.GetTempEnv(req)
+			if err != nil {
+				r.ServerError(w, err)
+				return
+			}
+			scope = "Temporary"
+		default:
+			r.RequestError(w, fmt.Errorf("unrecognized scope '%s'", scope))
+			return
+		}
+		envBytes, err := json.MarshalIndent(envMap, "", "  ")
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		request, ok := coll.GetRequest(name)
+		if !ok {
+			r.ServerError(w, fmt.Errorf("no request '%s' found in collection '%s'", name, coll.Name))
+			return
+		}
+		currentEnv, err := ces.GetCurrentEnv(req)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		r.Render(w, 200, "request.tmpl.html", struct {
+			EscapedPath        string
+			CollectionName     string
+			CollectionPath     string
+			Requests           []data.Request
+			Name               string
+			EditText           string
+			EnvironmentText    string
+			CurrentEnvironment string
+			ExecText           string
+			EnvScope           string
+			Error              string
+		}{
+			EscapedPath:        url.PathEscape(path),
+			CollectionName:     coll.Name,
+			CollectionPath:     url.PathEscape(coll.Path),
+			Requests:           coll.Requests,
+			Name:               name,
+			EditText:           request.Script.String(),
+			EnvironmentText:    string(envBytes),
+			CurrentEnvironment: currentEnv,
+			ExecText:           "",
+			EnvScope:           scope,
+			Error:              util.GetErrorOnRequest(w, req),
+		})
 	}
-	name, ok := getParamEscaped(r, w, req, "name")
-	if !ok {
-		return
-	}
-	coll, err := handlers.GetCollection(fmt.Sprintf("/%s", path))
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	conf, err := handlers.GetConfig()
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	scope := req.URL.Query().Get("scope")
-	var envMap data.EnvMap
-	switch scope {
-	case "":
-		fallthrough
-	case "collection":
-		envMap = coll.Environment
-		scope = "Collection"
-	case "temp":
-		envMap = getTempConfig()
-		scope = "Temporary"
-	default:
-		r.RequestError(w, fmt.Errorf("unrecognized scope '%s'", scope))
-		return
-	}
-	envBytes, err := json.MarshalIndent(envMap, "", "  ")
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	request, ok := coll.GetRequest(name)
-	if !ok {
-		r.ServerError(w, fmt.Errorf("no request '%s' found in collection '%s'", name, coll.Name))
-		return
-	}
-	r.Render(w, 200, "request.tmpl.html", struct {
-		EscapedPath        string
-		CollectionName     string
-		CollectionPath     string
-		Requests           []data.Request
-		Name               string
-		EditText           string
-		EnvironmentText    string
-		CurrentEnvironment string
-		ExecText           string
-		EnvScope           string
-		Error              string
-	}{
-		EscapedPath:        url.PathEscape(path),
-		CollectionName:     coll.Name,
-		CollectionPath:     url.PathEscape(coll.Path),
-		Requests:           coll.Requests,
-		Name:               name,
-		EditText:           request.Script.String(),
-		EnvironmentText:    string(envBytes),
-		CurrentEnvironment: conf.CurrentEnv,
-		ExecText:           "",
-		EnvScope:           scope,
-		Error:              util.GetErrorOnRequest(w, req),
-	})
 }
 
 func (r *Router) showRenameCollection(w http.ResponseWriter, req *http.Request) {

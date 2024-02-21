@@ -18,9 +18,9 @@ import (
 
 type State struct {
 	*lua.LState
-	config       *data.Config
 	exports      ExportMap
 	currentIdent Identifier
+	currentEnv   string
 	environment  map[string]string
 	loopCheck    LoopChecker
 	ctx          context.Context
@@ -49,8 +49,8 @@ func (lc LoopChecker) ClearIdent(ident Identifier) {
 type ExportMap map[string]*lua.LTable
 
 func CreateState(
-	conf *data.Config,
 	ident Identifier,
+	currentEnv string,
 	env data.EnvMapValue,
 	loopCheck LoopChecker,
 ) *State {
@@ -60,9 +60,9 @@ func CreateState(
 
 	state := State{
 		LState:       L,
-		config:       conf,
 		exports:      make(ExportMap),
 		currentIdent: ident,
+		currentEnv:   currentEnv,
 		environment:  env,
 		loopCheck:    loopCheck,
 		ctx:          ctx,
@@ -223,7 +223,7 @@ func (s *State) execute(_ *lua.LState) int {
 	if err != nil {
 		return s.CancelErr("error: execute: while reading collection at '%s': %v", ident.Path, err)
 	}
-	state, err := ExecuteRequest(coll, request, s.config, mergeMaps(s.environment, overrides), s.loopCheck)
+	state, err := ExecuteRequest(coll, request, s.currentEnv, mergeMaps(s.environment, overrides), s.loopCheck)
 	if err != nil {
 		return s.CancelErr("error: execute: while performing request '%s': %v", request, err)
 	}

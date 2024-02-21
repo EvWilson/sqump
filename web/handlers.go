@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,82 +8,87 @@ import (
 	"os"
 	"strings"
 
-	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/web/stores"
+	"github.com/EvWilson/sqump/web/util"
 )
 
-func (r *Router) setCurrentEnv(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
-	if err != nil {
-		r.ServerError(w, err)
-		return
+func (r *Router) setCurrentEnv(ces stores.CurrentEnvService) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		err := req.ParseForm()
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		envSlice, ok := req.Form["current"]
+		if !ok {
+			r.RequestError(w, errors.New("save current env form does not contain field 'current'"))
+			return
+		}
+		env := strings.Join(envSlice, "\n")
+		err = ces.SetCurrentEnv(req, env)
+		if err != nil {
+			r.ServerError(w, err)
+			return
+		}
+		http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
 	}
-	envSlice, ok := req.Form["current"]
-	if !ok {
-		r.RequestError(w, errors.New("save current env form does not contain field 'current'"))
-		return
-	}
-	env := strings.Join(envSlice, "\n")
-	err = handlers.SetCurrentEnv(env)
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	http.Redirect(w, req, req.Header.Get("Referer"), http.StatusFound)
 }
 
-func (r *Router) handleCollectionConfig(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
-	if err != nil {
-		r.ServerError(w, err)
-		return
-	}
-	scopeSlice, ok := req.Form["scope"]
-	if !ok {
-		r.RequestError(w, errors.New("save request config form does not contain field 'scope'"))
-		return
-	}
-	scope := strings.Join(scopeSlice, "\n")
-	nameSlice, ok := req.Form["name"]
-	if !ok {
-		nameSlice = []string{}
-	}
-	name := strings.Join(nameSlice, "\n")
-	path, ok := getParamEscaped(r, w, req, "path")
-	if !ok {
-		return
-	}
-	var redirectURL string
-	if name != "" {
-		redirectURL = fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), name)
-	} else {
-		redirectURL = fmt.Sprintf("/collection/%s", url.PathEscape(path))
-	}
-	switch scope {
-	case "collection":
-		envMap, err := configMap(req)
+func (r *Router) handleCollectionConfig(tcs stores.TempConfigService) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		err := req.ParseForm()
 		if err != nil {
 			r.ServerError(w, err)
 			return
 		}
-		err = handlers.UpdateCollectionEnv(fmt.Sprintf("/%s", path), envMap)
-		if err != nil {
-			r.ServerError(w, err)
+		scopeSlice, ok := req.Form["scope"]
+		if !ok {
+			r.RequestError(w, errors.New("save request config form does not contain field 'scope'"))
 			return
 		}
-		http.Redirect(w, req, redirectURL, http.StatusFound)
-		return
-	case "temp":
-		err := saveTempConfig(req)
-		if err != nil {
-			r.ServerError(w, err)
+		scope := strings.Join(scopeSlice, "\n")
+		nameSlice, ok := req.Form["name"]
+		if !ok {
+			nameSlice = []string{}
+		}
+		name := strings.Join(nameSlice, "\n")
+		path, ok := getParamEscaped(r, w, req, "path")
+		if !ok {
 			return
 		}
-		http.Redirect(w, req, fmt.Sprintf("%s?scope=temp", redirectURL), http.StatusFound)
-		return
-	default:
-		r.RequestError(w, fmt.Errorf("unrecognized collection scope '%s'", scope))
-		return
+		var redirectURL string
+		if name != "" {
+			redirectURL = fmt.Sprintf("/collection/%s/request/%s", url.PathEscape(path), name)
+		} else {
+			redirectURL = fmt.Sprintf("/collection/%s", url.PathEscape(path))
+		}
+		switch scope {
+		case "collection":
+			envMap, err := util.ConfigMap(req)
+			if err != nil {
+				r.ServerError(w, err)
+				return
+			}
+			err = handlers.UpdateCollectionEnv(fmt.Sprintf("/%s", path), envMap)
+			if err != nil {
+				r.ServerError(w, err)
+				return
+			}
+			http.Redirect(w, req, redirectURL, http.StatusFound)
+			return
+		case "temp":
+			err := tcs.SaveTempConfig(req)
+			if err != nil {
+				r.ServerError(w, err)
+				return
+			}
+			http.Redirect(w, req, fmt.Sprintf("%s?scope=temp", redirectURL), http.StatusFound)
+			return
+		default:
+			r.RequestError(w, fmt.Errorf("unrecognized collection scope '%s'", scope))
+			return
+		}
 	}
 }
 
@@ -267,18 +271,4 @@ func (r *Router) performAutoregister(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	http.Redirect(w, req, "/", http.StatusFound)
-}
-
-func configMap(req *http.Request) (data.EnvMap, error) {
-	configData, ok := req.Form["config"]
-	if !ok {
-		return nil, errors.New("core config form does not contain field 'config'")
-	}
-	configString := strings.Join(configData, "\n")
-	var envMap data.EnvMap
-	err := json.Unmarshal([]byte(configString), &envMap)
-	if err != nil {
-		return nil, err
-	}
-	return envMap, nil
 }

@@ -33,7 +33,12 @@ func handleExec(ctx context.Context, args []string) error {
 		err = handleExecFuzzy(overrides)
 	case 2:
 		filepath, requestName := args[0], args[1]
-		err = handlers.ExecuteRequest(filepath, requestName, overrides)
+		var env string
+		env, err = handlers.GetCurrentEnv()
+		if err != nil {
+			return err
+		}
+		err = handlers.ExecuteRequest(filepath, requestName, env, overrides)
 	default:
 		return fmt.Errorf("expected 0 or 2 args to `exec`, got: %d", len(args))
 	}
@@ -78,5 +83,5 @@ func handleExecFuzzy(overrides data.EnvMapValue) error {
 		return fmt.Errorf("more than a single '.' found in request identifier: '%s'", option)
 	}
 	_, requestName := pieces[0], pieces[1]
-	return handlers.ExecuteRequest(conf.Files[idx], requestName, overrides)
+	return handlers.ExecuteRequest(conf.Files[idx], requestName, conf.CurrentEnv, overrides)
 }

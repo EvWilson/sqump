@@ -7,16 +7,12 @@ import (
 	"github.com/EvWilson/sqump/exec"
 )
 
-func GetPreparedScript(fpath, requestName string, overrides data.EnvMapValue) (string, error) {
+func GetPreparedScript(fpath, requestName, currentEnv string, overrides data.EnvMapValue) (string, error) {
 	coll, err := data.ReadCollection(fpath)
 	if err != nil {
 		return "", err
 	}
-	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
-	if err != nil {
-		return "", err
-	}
-	script, _, err := exec.PrepareScript(coll, requestName, conf, overrides)
+	script, _, err := exec.PrepareScript(coll, requestName, currentEnv, overrides)
 	if err != nil {
 		return "", fmt.Errorf("error occurred during script preparation: %v", err)
 	}

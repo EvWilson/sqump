@@ -79,6 +79,14 @@ func UpdateRequestScript(fpath, requestName string, newScript []string) error {
 	return coll.UpsertRequest(req).Flush()
 }
 
+func GetCurrentEnv() (string, error) {
+	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
+	if err != nil {
+		return "", err
+	}
+	return conf.CurrentEnv, nil
+}
+
 func SetCurrentEnv(newEnv string) error {
 	conf, err := data.ReadConfigFrom(data.DefaultConfigLocation())
 	if err != nil {
