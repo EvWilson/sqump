@@ -9,17 +9,13 @@
     {
       "name": "Cycle1",
       "script": [
-        "local s = require('sqump')",
-        "",
-        "s.execute('Cycle2')"
+        "require('Cycle2')"
       ]
     },
     {
       "name": "Cycle2",
       "script": [
-        "local s = require('sqump')",
-        "",
-        "s.execute('Cycle1')"
+        "require('Cycle1')"
       ]
     },
     {
@@ -33,11 +29,11 @@
         "",
         "assert(resp.status == 200, \"req A status\")",
         "",
-        "s.export({",
+        "return {",
         "\tstatus = resp.status,",
         "\theaders = resp.headers,",
         "\tbody = resp.body",
-        "})"
+        "}"
       ]
     },
     {
@@ -45,7 +41,7 @@
       "script": [
         "local s = require('sqump')",
         "",
-        "local a = s.execute('GetAuth')",
+        "local a = require('GetAuth')",
         "",
         "local resp = s.fetch('http://localhost:5310/createThing', {",
         "\tmethod = 'POST',",

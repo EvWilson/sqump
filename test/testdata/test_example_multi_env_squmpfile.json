@@ -15,19 +15,18 @@
       ]
     },
     {
-      "name": "AssertOnOverride",
+      "name": "AssertOnRequiredValue",
       "script": [
-        "assert({{.override}} == 5)"
+        "local mod = require('ReturnVal')",
+        "assert(mod.val == 6)"
       ]
     },
     {
-      "name": "PassOverride",
+      "name": "ReturnVal",
       "script": [
-        "local s = require('sqump')",
-        "",
-        "s.execute('AssertOnOverride', {",
-        "    override = '5',",
-        "})"
+        "return {",
+        "  val = 6",
+        "}"
       ]
     }
   ],

@@ -6,19 +6,6 @@ All data types are outlined as best as possible, and all parameters are required
 
 ## `sqump`
 ```
-execute(request) -> data
-    Parameters:
-        request - string, representing the name of another script in the collection
-    Returns:
-        data - table, the data returned by the specified request
-
-export(tbl, overrides)
-    Parameters:
-        tbl       - table, data to be made available to subsequent chained scripts
-        overrides - optional table, with table fields becoming environment overrides for all child scripts
-    Notes:
-        The optional overrides table can only hold strings as the values for the moment.
-
 fetch(resource, options) -> response
     Parameters:
         resource - string, the HTTP URL

@@ -87,7 +87,7 @@ func TestExample(t *testing.T) {
 		}
 		_, err = exec.ExecuteRequest(coll, "Cycle1", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err == nil || !strings.Contains(err.Error(), "cyclical") {
-			t.Fatal("cyclical script execution did not create proper error")
+			t.Fatal("cyclical script execution did not produce proper error")
 		}
 	})
 
@@ -119,7 +119,7 @@ func TestExample(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = exec.ExecuteRequest(coll, "PassOverride", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
+		_, err = exec.ExecuteRequest(coll, "AssertOnRequiredValue", conf.CurrentEnv, make(data.EnvMapValue), exec.NewLoopChecker())
 		if err != nil {
 			t.Fatal(err)
 		}

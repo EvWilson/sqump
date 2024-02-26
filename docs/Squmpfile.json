@@ -12,21 +12,18 @@
         "local s = require('sqump')",
         "",
         "local resp = s.fetch('https://pokeapi.co/api/v2/pokemon/{{.pokemon}}')",
-        "",
         "local mon = s.from_json(resp.body)",
         "print(mon.id, mon.types[1].type.name)",
         "",
-        "s.export({",
+        "return {",
         "  pokemon = mon,",
-        "})"
+        "}"
       ]
     },
     {
       "name": "Req2",
       "script": [
-        "local s = require('sqump')",
-        "",
-        "local res = s.execute('Req1')",
+        "local res = require('Req1')",
         "",
         "local k = require('sqump_kafka')",
         "local brokers = {'localhost:9092'}",
@@ -35,7 +32,7 @@
         "k.provision_topic(brokers, topic)",
         "",
         "local p = k.new_producer(brokers, topic, 5)",
-        "p:write(tostring(re.pokemon.id), tostring(res.pokemon.weight))",
+        "p:write(tostring(res.pokemon.id), tostring(res.pokemon.weight))",
         "p:close()",
         "print('done writing!')"
       ]

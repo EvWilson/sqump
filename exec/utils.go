@@ -46,43 +46,6 @@ func getBoolParam(L *lua.LState, paramName string, stackPosition int) (bool, err
 	}
 }
 
-func getMapParamOrNil(L *lua.LState, paramName string, stackPosition int) (map[string]string, error) {
-	stackVal := L.Get(stackPosition)
-	val, ok := stackVal.(*lua.LTable)
-	if !ok {
-		if stackVal.Type() == lua.LTNil {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("error: getMapParam: expected '%s' parameter to be a map or nil, instead got '%s'", paramName, stackVal.Type().String())
-	}
-	toStr := func(lv lua.LValue) (string, error) {
-		if str, ok := lv.(lua.LString); ok {
-			return string(str), nil
-		} else {
-			return "", fmt.Errorf("got '%s' instead of string", lv.Type().String())
-		}
-	}
-	var outerErr error
-	ret := make(map[string]string, val.Len())
-	val.ForEach(func(l1, l2 lua.LValue) {
-		l1Str, err := toStr(l1)
-		if err != nil {
-			outerErr = err
-			return
-		}
-		l2Str, err := toStr(l2)
-		if err != nil {
-			outerErr = err
-			return
-		}
-		ret[l1Str] = l2Str
-	})
-	if outerErr != nil {
-		return nil, fmt.Errorf("error: getMapParam: %v", outerErr)
-	}
-	return ret, nil
-}
-
 func luaTypeToString(val lua.LValue) (string, error) {
 	switch val.Type() {
 	case lua.LTString:

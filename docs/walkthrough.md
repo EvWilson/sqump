@@ -65,11 +65,11 @@ local resp = s.fetch('https://pokeapi.co/api/v2/pokemon/{{.pokemon}}')
 local mon = s.from_json(resp.body)
 print(mon.id, mon.types[1].type.name)
 
-s.export({
+return {
   pokemon = mon,
-})
+}
 ```
-With this, we can check Pikachu's Pokédex ID and the name of his typing, then export the data we gathered to be used by another script! Heads up for the 1-based Lua indexing when accessing JSON array indices. Next, we'll look at starting to use this information in another script.
+With this, we can check Pikachu's Pokédex ID and the name of his typing, then return the data we gathered to be used by another script! Heads up for the 1-based Lua indexing when accessing JSON array indices. Next, we'll look at starting to use this information in another script.
 
 ### Bringing in Kafka
 For this next portion, we'll assume that you have Docker installed. We'll be using it to run the `docker-compose.yml` file in this directory to bring up a local Kafka instance to test with.
@@ -80,7 +80,7 @@ After that's done, we'll go ahead and create a new script with the following:
 ```lua
 local s = require('sqump')
 
-local res = s.execute('Req1')
+local res = require('Req1')
 
 local k = require('sqump_kafka')
 local brokers = {'localhost:9092'}

@@ -18,7 +18,6 @@ import (
 
 type State struct {
 	*lua.LState
-	exports      ExportMap
 	currentIdent Identifier
 	currentEnv   string
 	environment  map[string]string
@@ -26,6 +25,7 @@ type State struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 	err          error
+	oldReq       *lua.LFunction
 }
 
 type LoopChecker map[string]bool
@@ -46,8 +46,6 @@ func (lc LoopChecker) ClearIdent(ident Identifier) {
 	delete(lc, ident.String())
 }
 
-type ExportMap map[string]*lua.LTable
-
 func CreateState(
 	ident Identifier,
 	currentEnv string,
@@ -60,7 +58,6 @@ func CreateState(
 
 	state := State{
 		LState:       L,
-		exports:      make(ExportMap),
 		currentIdent: ident,
 		currentEnv:   currentEnv,
 		environment:  env,
@@ -68,14 +65,14 @@ func CreateState(
 		ctx:          ctx,
 		cancel:       cancel,
 		err:          nil,
+		oldReq:       L.GetGlobal("require").(*lua.LFunction),
 	}
 	state.loopCheck.AddIdent(state.currentIdent)
 
 	L.SetGlobal("print", L.NewFunction(printViaCore))
+	L.SetGlobal("require", L.NewFunction(state.require))
 	L.PreloadModule("sqump", func(l *lua.LState) int {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
-			"execute":        state.execute,
-			"export":         state.export,
 			"fetch":          state.fetch,
 			"print_response": state.printResponse,
 			"to_json":        state.toJSON,
@@ -201,53 +198,6 @@ func (s *State) fetch(_ *lua.LState) int {
 	return 1
 }
 
-func (s *State) execute(_ *lua.LState) int {
-	request, err := getStringParam(s.LState, "request", 1)
-	if err != nil {
-		return s.CancelErr("error: execute: %v", err)
-	}
-	overrides, err := getMapParamOrNil(s.LState, "overrides", 2)
-	if err != nil {
-		return s.CancelErr("error: execute: %v", err)
-	}
-
-	ident := s.currentIdent
-	ident.Request = request
-
-	if !s.loopCheck.AddIdent(ident) {
-		return s.CancelErr("error: execute: cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
-	}
-	defer s.loopCheck.ClearIdent(ident)
-
-	coll, err := data.ReadCollection(ident.Path)
-	if err != nil {
-		return s.CancelErr("error: execute: while reading collection at '%s': %v", ident.Path, err)
-	}
-	state, err := ExecuteRequest(coll, request, s.currentEnv, mergeMaps(s.environment, overrides), s.loopCheck)
-	if err != nil {
-		return s.CancelErr("error: execute: while performing request '%s': %v", request, err)
-	}
-
-	export, ok := state.exports[ident.String()]
-	if ok {
-		s.exports[ident.String()] = export
-	}
-
-	s.LState.Push(export)
-	return 1
-}
-
-func (s *State) export(_ *lua.LState) int {
-	ctxVal := s.LState.Get(1)
-	if ctxVal.Type() != lua.LTTable {
-		return s.CancelErr("error: export: expected context parameter to be table, instead got: %s", ctxVal.Type().String())
-	}
-	ctx := ctxVal.(*lua.LTable)
-	s.exports[s.currentIdent.String()] = ctx
-
-	return 0
-}
-
 func (s *State) printResponse(_ *lua.LState) int {
 	respVal := s.LState.Get(1)
 	if respVal.Type() != lua.LTTable {
@@ -322,6 +272,46 @@ func (s *State) fromJSON(_ *lua.LState) int {
 	return 1
 }
 
+func (s *State) require(_ *lua.LState) int {
+	moduleName, err := getStringParam(s.LState, "module", 1)
+	if err != nil {
+		return s.CancelErr("error: require: %v", err)
+	}
+	coll, err := data.ReadCollection(s.currentIdent.Path)
+	if err != nil {
+		return s.CancelErr("error: require: %v", err)
+	}
+	for _, req := range coll.Requests {
+		if moduleName == req.Name {
+			ident := s.currentIdent
+			ident.Request = req.Name
+			if !s.loopCheck.AddIdent(ident) {
+				return s.CancelErr("error: require: cyclical loop detected: '%s' calling '%s', which has already been executed. Loop checker state: %v", s.currentIdent.String(), ident.String(), s.loopCheck)
+			}
+			defer s.loopCheck.ClearIdent(ident)
+
+			script, err := s.prepScript(req.Script.String())
+			if err != nil {
+				return s.CancelErr("error: require: %v", err)
+			}
+			err = s.DoString(script)
+			if err != nil {
+				return s.CancelErr("error: require: state error: %v, error: %v", s.err, err)
+			}
+			returned := s.LState.GetTop()
+			for i := 1; i < returned; i++ {
+				s.LState.Push(s.LState.Get(i + 1))
+			}
+			return returned - 1
+		}
+	}
+	// Fall back to old require if needed
+	s.LState.Push(s.oldReq)
+	s.LState.Push(lua.LString(moduleName))
+	s.LState.Call(1, 1)
+	return 1
+}
+
 func printViaCore(L *lua.LState) int {
 	top := L.GetTop()
 	args := make([]interface{}, 0, top)
@@ -336,4 +326,8 @@ func (s *State) CancelErr(format string, args ...any) int {
 	s.err = fmt.Errorf(format, args...)
 	s.cancel()
 	return 0
+}
+
+func (s *State) prepScript(script string) (string, error) {
+	return replaceEnvTemplates(s.currentIdent.String(), script, s.environment)
 }
