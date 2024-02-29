@@ -12,11 +12,7 @@ func Autoregister(cwd string) error {
 	found := make([]string, 0)
 	err := filepath.Walk(cwd, func(path string, info fs.FileInfo, err error) error {
 		if err == nil && info.Name() == "Squmpfile.json" {
-			abs, err := filepath.Abs(info.Name())
-			if err != nil {
-				return err
-			}
-			found = append(found, abs)
+			found = append(found, path)
 		}
 		return nil
 	})
