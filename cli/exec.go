@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/EvWilson/sqump/cli/cmder"
 	"github.com/EvWilson/sqump/data"
@@ -50,7 +49,12 @@ func handleExec(ctx context.Context, args []string) error {
 }
 
 func handleExecFuzzy(overrides data.EnvMapValue) error {
-	options := make([]string, 0)
+	type ExecOption struct {
+		CollName string
+		ReqName  string
+		Path     string
+	}
+	options := make([]ExecOption, 0)
 
 	conf, err := handlers.GetConfig()
 	if err != nil {
@@ -63,14 +67,19 @@ func handleExecFuzzy(overrides data.EnvMapValue) error {
 			return err
 		}
 		for _, req := range coll.Requests {
-			options = append(options, fmt.Sprintf("%s.%s", coll.Name, req.Name))
+			options = append(options, ExecOption{
+				CollName: coll.Name,
+				ReqName:  req.Name,
+				Path:     path,
+			})
 		}
 	}
 
 	idx, err := fuzzyfinder.Find(
 		options,
 		func(i int) string {
-			return options[i]
+			opt := options[i]
+			return fmt.Sprintf("%s.%s", opt.CollName, opt.ReqName)
 		},
 	)
 	if err != nil {
@@ -78,10 +87,5 @@ func handleExecFuzzy(overrides data.EnvMapValue) error {
 	}
 
 	option := options[idx]
-	pieces := strings.Split(option, ".")
-	if len(pieces) != 2 {
-		return fmt.Errorf("more than a single '.' found in request identifier: '%s'", option)
-	}
-	_, requestName := pieces[0], pieces[1]
-	return handlers.ExecuteRequest(conf.Files[idx], requestName, conf.CurrentEnv, overrides)
+	return handlers.ExecuteRequest(option.Path, option.ReqName, conf.CurrentEnv, overrides)
 }
