@@ -110,6 +110,11 @@ button, input[type=submit], input[type=text], select {
   margin: 1vw;
 }
 
+.right {
+  float: right;
+  margin-right: 0.5vw;
+}
+
 #lua-editor {
   /* top | right | bottom | left */
   margin: 2px 0.5vw 2px 0px;

@@ -39,8 +39,10 @@
 			<textarea id="lua-editarea" name="edit" hidden>{{.EditText}}</textarea>
 			<div id="lua-editor" class="half"></div>
 			<input id="lua-submit" type="submit" value="Save">
-			<button id="lua-exec" type="button" onclick="execRequest('{{$path}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
-			<button id="lua-view" type="button" onclick="viewRequest('{{$path}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
+			<div class="right">
+				<button id="lua-exec" type="button" onclick="execRequest('{{$path}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">Execute</button>
+				<button id="lua-view" type="button" onclick="viewRequest('{{$path}}', '{{.Name}}', getCurrentScope(), getCurrentEnvironment())">View Substituted Script</button>
+			</div>
 		</form>
 	</div>
 	<div class="flex-smaller">
