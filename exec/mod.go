@@ -76,6 +76,7 @@ func CreateState(
 			"fetch":          state.fetch,
 			"print_response": state.printResponse,
 			"to_json":        state.toJSON,
+			"to_json_pretty": state.toJSONPretty,
 			"from_json":      state.fromJSON,
 		})
 		L.Push(mod)
@@ -256,6 +257,20 @@ func (s *State) toJSON(_ *lua.LState) int {
 		return s.CancelErr("error: to_json: error serializing to JSON: %v", err)
 	}
 	s.LState.Push(lua.LString(b))
+	return 1
+}
+
+func (s *State) toJSONPretty(_ *lua.LState) int {
+	b, err := marshalLValue(s.LState.Get(1))
+	if err != nil {
+		return s.CancelErr("error: to_json_pretty: error serializing to JSON: %v", err)
+	}
+	var buf bytes.Buffer
+	err = json.Indent(&buf, b, "", "  ")
+	if err != nil {
+		return s.CancelErr("error: to_json_pretty: error indenting JSON: %v", err)
+	}
+	s.LState.Push(lua.LString(buf.String()))
 	return 1
 }
 

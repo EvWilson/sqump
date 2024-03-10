@@ -2,12 +2,14 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/EvWilson/sqump/data"
 	"github.com/EvWilson/sqump/handlers"
+	"github.com/EvWilson/sqump/prnt"
 	"github.com/EvWilson/sqump/web/stores"
 	"github.com/EvWilson/sqump/web/util"
 
@@ -29,6 +31,10 @@ func (r *Router) showHome(w http.ResponseWriter, req *http.Request) {
 	for _, path := range files {
 		coll, err := handlers.GetCollection(path)
 		if err != nil {
+			if errors.Is(err, data.ErrNotFound{}) {
+				prnt.Println("WARNING: while loading home:", err.Error())
+				continue
+			}
 			r.ServerError(w, err)
 			return
 		}
