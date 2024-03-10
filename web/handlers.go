@@ -82,13 +82,13 @@ func (r *Router) handleCollectionConfig(isReadonly bool, tcs stores.TempConfigSe
 			}
 			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
-		case "temp":
+		case "override":
 			err := tcs.SaveTempConfig(req)
 			if err != nil {
 				r.ServerError(w, err)
 				return
 			}
-			http.Redirect(w, req, fmt.Sprintf("%s?scope=temp", redirectURL), http.StatusFound)
+			http.Redirect(w, req, fmt.Sprintf("%s?scope=override", redirectURL), http.StatusFound)
 			return
 		default:
 			r.RequestError(w, fmt.Errorf("unrecognized collection scope '%s'", scope))

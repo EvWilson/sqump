@@ -114,13 +114,13 @@ func (r *Router) showRequest(ces stores.CurrentEnvService, tcs stores.TempConfig
 		case "collection":
 			envMap = coll.Environment
 			scope = "Collection"
-		case "temp":
+		case "override":
 			envMap, err = tcs.GetTempEnv(req)
 			if err != nil {
 				r.ServerError(w, err)
 				return
 			}
-			scope = "Temporary"
+			scope = "Overrides"
 		default:
 			r.RequestError(w, fmt.Errorf("unrecognized scope '%s'", scope))
 			return

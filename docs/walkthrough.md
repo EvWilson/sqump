@@ -28,7 +28,7 @@ You may have noticed the odd `{{.pokemon}}` at the end of the `fetch` URL. This 
 
 The initial value for the current environment should be `staging`, so we'll add the field `"pokemon": "pikachu"` to this environment. This should be possible via the Environment panel on the web UI request page, or via `sqump edit` on the CLI.
 
-As a final (and important!) note, there are three scopes of environment variable provided for your convenience - `collection`, `core`, and `temporary`. In order of precedence, temporary overrides core which overrides collection. This is arranged so that sensible defaults can be included with a script, but the end user is allowed to override these values on a temporary or relatively permanent basis.
+As a final (and important!) note, there are two scopes of environment variable provided for your convenience - `collection` and `overrides`. In order of precedence, temporary overrides collection. This is arranged so that sensible defaults can be included with a script, but the end user is allowed to override these values on a temporary basis.
 
 With our environment explained and configured, we can get back to writing our scripts!
 
