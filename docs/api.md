@@ -26,6 +26,13 @@ to_json(value) -> json
     Returns:
         json - string, the given value in JSON representation
 
+to_json_pretty(value) -> json
+    Parameters:
+        value - any, a value to convert to JSON representation
+    Returns:
+        json - string, the given value in JSON representation
+    Note: Same as the above, just with the output indented.
+
 from_json(json) -> value
     Parameters:
         json - string, a valid JSON string

@@ -67,8 +67,8 @@
 		</div>
 	</div>
 </div>
-<div>
-	<h3>Execution Results</h3>
+<div id="result-div">
+	<h3 onclick="toggleFullscreen()" title="Click me to toggle results fullscreen">Execution Results</h3>
 	<textarea id="result" class="third" readonly>{{.ExecText}}</textarea>
 </div>
 
@@ -93,5 +93,55 @@ const getCurrentEnvironment = () => {
 const loadScope = (value) => {
 	window.location.search = `?scope=${value}`
 }
+
+const fullscreenInactive = () => {
+	return !document.fullscreenElement &&
+		!document.mozFullScreenElement &&
+		!document.webkitFullscreenElement &&
+		!document.msFullscreenElement
+}
+
+const toggleFullscreen = () => {
+	const element = document.getElementById("result-div")
+
+	const requestFullscreen = () => {
+		if (element.requestFullscreen) {
+			element.requestFullscreen()
+		} else if (element.msRequestFullscreen) {
+			element.msRequestFullscreen()
+		} else if (element.mozRequestFullScreen) {
+			element.mozRequestFullScreen()
+		} else if (element.webkitRequestFullscreen) {
+			element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT)
+		}
+	}
+
+	const cancelFullscreen = () => {
+		if (document.exitFullscreen) {
+			document.exitFullscreen()
+		} else if (document.msExitFullscreen) {
+			document.msExitFullscreen()
+		} else if (document.mozCancelFullScreen) {
+			document.mozCancelFullScreen()
+		} else if (document.webkitExitFullscreen) {
+			document.webkitExitFullscreen()
+		}
+	}
+
+	if (fullscreenInactive()) {
+		requestFullscreen()
+	} else {
+		cancelFullscreen()
+	}
+}
+
+const fullScreenChangeHandler = () => {
+	document.getElementById("result").classList.toggle("fullscreen")
+}
+
+document.addEventListener("fullscreenchange", fullScreenChangeHandler);
+document.addEventListener("mozfullscreenchange", fullScreenChangeHandler);
+document.addEventListener("webkitfullscreenchange", fullScreenChangeHandler);
+document.addEventListener("MSFullscreenChange", fullScreenChangeHandler);
 </script>
 {{end}}

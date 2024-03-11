@@ -115,6 +115,10 @@ button, input[type=submit], input[type=text], select {
   margin-right: 0.5vw;
 }
 
+.fullscreen {
+  height: 90vh;
+}
+
 #lua-editor {
   /* top | right | bottom | left */
   margin: 2px 0.5vw 2px 0px;
