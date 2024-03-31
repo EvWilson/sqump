@@ -119,6 +119,14 @@ button, input[type=submit], input[type=text], select {
   height: 90vh;
 }
 
+.inblock {
+  display: inline-block;
+}
+
+.leftpad {
+  padding-left: 1vw;
+}
+
 #lua-editor {
   /* top | right | bottom | left */
   margin: 2px 0.5vw 2px 0px;

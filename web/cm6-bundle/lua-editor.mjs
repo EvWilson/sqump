@@ -4,8 +4,8 @@ import { EditorState } from "@codemirror/state"
 import { lua } from "@codemirror/legacy-modes/mode/lua"
 import { defaultSetup, syncEditorValue } from "./shared.mjs"
 
-const luaSource = document.querySelector("#lua-editarea")
-const luaTarget = document.querySelector("#lua-editor")
+const luaSource = document.getElementById("lua-editarea")
+const luaTarget = document.getElementById("lua-editor")
 
 new EditorView({
   state: EditorState.create({

@@ -49,6 +49,7 @@ export const defaultSetup = [
 export const syncEditorValue = (target) => {
   return EditorView.updateListener.of((v) => {
     if (v.docChanged) {
+      document.dispatchEvent(new Event(target.name))
       target.value = v.state.doc.toString()
     }
   })

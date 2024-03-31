@@ -34,7 +34,10 @@
 		</div>
 	</div>
 	<div class="flex-bigger">
-		<h3>Edit</h3>
+		<div>
+			<h3 class="inblock">Edit</h3>
+			<p id="editor-edited" class="leftpad fade" hidden>Edited</p>
+		</div>
 		<form action="/collection/{{$path}}/request/{{.Name}}/edit-script" method="POST">
 			<textarea id="lua-editarea" name="edit" hidden>{{.EditText}}</textarea>
 			<div id="lua-editor" class="half"></div>
@@ -46,7 +49,10 @@
 		</form>
 	</div>
 	<div class="flex-smaller">
-		<h3>{{.EnvScope}} Environment</h3>
+		<div>
+			<h3 class="inblock">{{.EnvScope}} Environment</h3>
+			<p id="env-edited" class="leftpad fade" hidden>Edited</p>
+		</div>
 		<div class="half">
 			<form action="/current-env" method="POST">
 				<span>Current:</span>
@@ -93,6 +99,18 @@ const getCurrentEnvironment = () => {
 const loadScope = (value) => {
 	window.location.search = `?scope=${value}`
 }
+
+// Show edited status after initial edit
+document.addEventListener("edit", (e) => {
+	document.getElementById("editor-edited").style.display = "inline-block"
+}, {
+	once: true
+})
+document.addEventListener("config", (e) => {
+	document.getElementById("env-edited").style.display = "inline-block"
+}, {
+	once: true
+})
 
 const fullscreenInactive = () => {
 	return !document.fullscreenElement &&
