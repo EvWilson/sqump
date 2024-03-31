@@ -74,7 +74,10 @@
 	</div>
 </div>
 <div id="result-div">
-	<h3 onclick="toggleFullscreen()" title="Click me to toggle results fullscreen">Execution Results</h3>
+	<div>
+		<h3 class="inblock leftpad">Execution Results</h3>
+		<button class="inblock" onclick="toggleFullscreen()">Toggle Fullscreen</button>
+	</div>
 	<textarea id="result" class="third" readonly>{{.ExecText}}</textarea>
 </div>
 
