@@ -24,9 +24,6 @@ func ExecOperation() *cmder.Op {
 func handleExec(ctx context.Context, args []string) error {
 	overrides := ctx.Value(cmder.OverrideContextKey).(map[string]string)
 	var err error
-	if err != nil {
-		return err
-	}
 	switch len(args) {
 	case 0:
 		err = handleExecFuzzy(overrides)
