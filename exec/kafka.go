@@ -77,6 +77,7 @@ func (s *State) registerKafkaModule(L *lua.LState) {
 		return 1
 	})
 }
+
 func (s *State) newConsumer(_ *lua.LState) int {
 	brokers, err := getStringArrayParam(s.LState, "brokers", 1)
 	if err != nil {

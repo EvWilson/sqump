@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ type State struct {
 	cancel       context.CancelFunc
 	err          error
 	oldReq       *lua.LFunction
+	pauseChan    chan struct{}
 }
 
 type LoopChecker map[string]bool
@@ -66,23 +68,29 @@ func CreateState(
 		cancel:       cancel,
 		err:          nil,
 		oldReq:       L.GetGlobal("require").(*lua.LFunction),
+		pauseChan:    make(chan struct{}),
 	}
 	state.loopCheck.AddIdent(state.currentIdent)
 
+	L.SetGlobal("pause", L.NewFunction(state.Pause))
+	L.SetGlobal("play", L.NewFunction(state.Play))
+
 	L.SetGlobal("print", L.NewFunction(printViaCore))
 	L.SetGlobal("require", L.NewFunction(state.require))
-	L.PreloadModule("sqump", func(l *lua.LState) int {
+	L.PreloadModule("sqump", func(_ *lua.LState) int {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
-			"fetch":          state.fetch,
-			"print_response": state.printResponse,
-			"to_json":        state.toJSON,
-			"to_json_pretty": state.toJSONPretty,
-			"from_json":      state.fromJSON,
+			"fetch":           state.fetch,
+			"print_response":  state.printResponse,
+			"to_json":         state.toJSON,
+			"to_json_pretty":  state.toJSONPretty,
+			"from_json":       state.fromJSON,
+			"to_query_string": state.toQueryString,
 		})
 		L.Push(mod)
 		return 1
 	})
 	state.registerKafkaModule(L)
+	state.registerWebsocketModule(L)
 
 	return &state
 }
@@ -287,6 +295,19 @@ func (s *State) fromJSON(_ *lua.LState) int {
 	return 1
 }
 
+func (s *State) toQueryString(_ *lua.LState) int {
+	params, err := getTableParam(s.LState, "tbl", 1)
+	if err != nil {
+		return s.CancelErr("error: to_query_string: %v", err)
+	}
+	ret := url.Values{}
+	for k, v := range params {
+		ret.Add(k, v)
+	}
+	s.LState.Push(lua.LString(ret.Encode()))
+	return 1
+}
+
 func (s *State) require(_ *lua.LState) int {
 	moduleName, err := getStringParam(s.LState, "module", 1)
 	if err != nil {
@@ -325,6 +346,16 @@ func (s *State) require(_ *lua.LState) int {
 	s.LState.Push(lua.LString(moduleName))
 	s.LState.Call(1, 1)
 	return 1
+}
+
+func (s *State) Pause(L *lua.LState) int {
+	<-s.pauseChan
+	return 0
+}
+
+func (s *State) Play(L *lua.LState) int {
+	s.pauseChan <- struct{}{}
+	return 0
 }
 
 func printViaCore(L *lua.LState) int {

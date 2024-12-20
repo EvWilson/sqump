@@ -4,19 +4,28 @@ This is the API documentation for the Lua modules that `sqump` makes available. 
 
 All data types are outlined as best as possible, and all parameters are required unless otherwise noted.
 
+## Global
+```
+pause()
+    Description: helper to suspend execution outside a coroutine context for simple scripting (see sqump_ws' client:onmessage for a practical spot)
+
+play()
+    Description: helper to resume execution from the above
+```
+
 ## `sqump`
 ```
 fetch(resource, options) -> response
     Parameters:
         resource - string, the HTTP URL
-        options  - optional table, the options modeled after the Fetch API, with some alterations
+        options  - table | nil, the options modeled after the Fetch API, with some alterations
             method  - string, representing the HTTP method to use (default GET)
             timeout - number, the timeout for the request in seconds (default 10)
             headers - table, an array of strings to use as request headers (default none)
             body    - string, the request body data (default none)
     Returns:
         response - table, holding:
-            status  - number, the status code of the response
+            status  - integer, the status code of the response
             headers - table, the headers of the response
             body    - string, the body sent in the response
 
@@ -39,6 +48,12 @@ from_json(json) -> value
     Returns:
         value - any, the given JSON string converted to a Lua value
 
+to_query_string(tbl) -> querystring
+    Parameters:
+        tbl - table<string, string | integer>, table holding key-value pairs to URL-encode
+    Returns:
+        querystring - string, the URL-encoded string
+
 print_response(response)
     Parameters:
         response - table, holding the result of `fetch`, to be printed to the console
@@ -48,16 +63,16 @@ print_response(response)
 ```
 new_consumer(brokers, group, topic, offset) -> consumer
     Parameters:
-        brokers - table, an array of string addresses for the consumer to connect to
+        brokers - string[], addresses for the consumer to connect to
         group   - string, the group ID of the consumer
         topic   - string, the topic to consume from
-        offset  - string, either "first" or "last", specifying the offset to initialize a new consumer group to
+        offset  - string ("first" | "last") - the offset to initialize a new consumer group to
     Returns:
         consumer - metatable, a custom type representing the connection handle of the consumer connection
 
 consumer:read_message(timeout, fail_on_timeout) -> message
     Parameters:
-        timeout         - number, an integer representing the timeout for the read in seconds
+        timeout         - integer, the timeout for the read in seconds
         fail_on_timeout - boolean, determining whether the the script should fail on read timeout
     Returns:
         message - table (or nil on timeout set to not fail), containing:
@@ -91,7 +106,24 @@ random_group_id() -> group_id
 
 provision_topic(brokers, topic)
     Parameters:
-        brokers - table, an array of string addresses for the consumer to connect to
+        brokers - string[], addresses for the consumer to connect to
         topic   - string, the topic to consume from
     Note: This function only dials the cluster to trigger topic auto-creates. It will have no effect if `allow.auto.create.topics` is not set to `true` on the cluster.
+```
+
+## `sqump_ws`
+```
+new_client(url) -> client
+    Parameters:
+        url - string, address to connect to
+    Returns:
+        client - metatable, a custom type representing the opened connection
+
+client:send(msg)
+    Parameters:
+        msg - string, message to send over the client connection
+
+client:onmessage(cb)
+    Parameters:
+        cb - func(val: string), a callback that executes for any message received on the client connection
 ```
