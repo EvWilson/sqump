@@ -48,6 +48,12 @@ from_json(json) -> value
     Returns:
         value - any, the given JSON string converted to a Lua value
 
+to_query_string(tbl) -> querystring
+    Parameters:
+        tbl - table<string, string | integer>, table holding key-value pairs to URL-encode
+    Returns:
+        querystring - string, the URL-encoded string
+
 print_response(response)
     Parameters:
         response - table, holding the result of `fetch`, to be printed to the console

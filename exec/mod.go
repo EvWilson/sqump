@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -78,11 +79,12 @@ func CreateState(
 	L.SetGlobal("require", L.NewFunction(state.require))
 	L.PreloadModule("sqump", func(_ *lua.LState) int {
 		mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
-			"fetch":          state.fetch,
-			"print_response": state.printResponse,
-			"to_json":        state.toJSON,
-			"to_json_pretty": state.toJSONPretty,
-			"from_json":      state.fromJSON,
+			"fetch":           state.fetch,
+			"print_response":  state.printResponse,
+			"to_json":         state.toJSON,
+			"to_json_pretty":  state.toJSONPretty,
+			"from_json":       state.fromJSON,
+			"to_query_string": state.toQueryString,
 		})
 		L.Push(mod)
 		return 1
@@ -290,6 +292,19 @@ func (s *State) fromJSON(_ *lua.LState) int {
 		return s.CancelErr("error: from_json: error parsing JSON string: %v", err)
 	}
 	s.LState.Push(lv)
+	return 1
+}
+
+func (s *State) toQueryString(_ *lua.LState) int {
+	params, err := getTableParam(s.LState, "tbl", 1)
+	if err != nil {
+		return s.CancelErr("error: to_query_string: %v", err)
+	}
+	ret := url.Values{}
+	for k, v := range params {
+		ret.Add(k, v)
+	}
+	s.LState.Push(lua.LString(ret.Encode()))
 	return 1
 }
 

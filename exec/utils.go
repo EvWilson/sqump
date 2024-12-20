@@ -55,6 +55,19 @@ func getFuncParam(L *lua.LState, paramName string, stackPosition int) (*lua.LFun
 	}
 }
 
+func getTableParam(L *lua.LState, paramName string, stackPosition int) (map[string]string, error) {
+	stackVal := L.Get(stackPosition)
+	if stackVal.Type() != lua.LTTable {
+		return nil, fmt.Errorf("error: getTableParam: expected '%s' parameter to be table, instead got '%s'", paramName, stackVal.Type().String())
+	}
+	tbl := stackVal.(*lua.LTable)
+	ret := make(map[string]string, tbl.Len())
+	tbl.ForEach(func(l1, l2 lua.LValue) {
+		ret[l1.String()] = l2.String()
+	})
+	return ret, nil
+}
+
 func luaTypeToString(val lua.LValue) (string, error) {
 	switch val.Type() {
 	case lua.LTString:
