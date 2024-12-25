@@ -24,7 +24,7 @@ type State struct {
 	environment  map[string]string
 	loopCheck    LoopChecker
 	ctx          context.Context
-	cancel       context.CancelFunc
+	Cancel       context.CancelFunc
 	err          error
 	oldReq       *lua.LFunction
 	pauseChan    chan struct{}
@@ -65,7 +65,7 @@ func CreateState(
 		environment:  env,
 		loopCheck:    loopCheck,
 		ctx:          ctx,
-		cancel:       cancel,
+		Cancel:       cancel,
 		err:          nil,
 		oldReq:       L.GetGlobal("require").(*lua.LFunction),
 		pauseChan:    make(chan struct{}),
@@ -349,7 +349,12 @@ func (s *State) require(_ *lua.LState) int {
 }
 
 func (s *State) Pause(L *lua.LState) int {
-	<-s.pauseChan
+	select {
+	case <-s.pauseChan:
+		break
+	case <-s.ctx.Done():
+		break
+	}
 	return 0
 }
 
@@ -370,7 +375,7 @@ func printViaCore(L *lua.LState) int {
 
 func (s *State) CancelErr(format string, args ...any) int {
 	s.err = fmt.Errorf(format, args...)
-	s.cancel()
+	s.Cancel()
 	return 0
 }
 

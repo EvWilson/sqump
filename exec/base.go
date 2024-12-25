@@ -86,6 +86,7 @@ func ExecuteRequest(
 	}
 
 	state := CreateState(ident, currentEnv, mergedEnv, loopCheck)
+	CacheCancelFunc(state.Cancel)
 	defer state.Close()
 
 	err = state.DoString(script)
