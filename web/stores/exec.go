@@ -9,6 +9,7 @@ import (
 type ExecProxyService interface {
 	ExecuteRequest(fpath, requestName string, r *http.Request) error
 	GetPreparedScript(fpath, requestName string, r *http.Request) (string, error)
+	CancelScripts()
 }
 
 func NewExecProxyService(ces CurrentEnvService, tcs TempConfigService) ExecProxyService {
@@ -45,4 +46,8 @@ func (e *execProxyService) GetPreparedScript(fpath, requestName string, r *http.
 		return "", err
 	}
 	return handlers.GetPreparedScript(fpath, requestName, currentEnv, env)
+}
+
+func (e *execProxyService) CancelScripts() {
+	handlers.CancelScripts()
 }

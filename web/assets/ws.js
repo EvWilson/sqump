@@ -55,3 +55,9 @@ const execRequest = (path, name, scope, environment) => {
 		}
 	}))
 }
+
+const cancelScripts = () => {
+	ws.send(JSON.stringify({
+		command: "cancel",
+	}))
+}

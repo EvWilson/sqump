@@ -14,3 +14,7 @@ func ExecuteRequest(fpath, requestName, currentEnv string, overrides data.EnvMap
 	_, err = exec.ExecuteRequest(coll, requestName, currentEnv, overrides, exec.NewLoopChecker())
 	return err
 }
+
+func CancelScripts() {
+	exec.CancelScripts()
+}

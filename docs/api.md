@@ -126,4 +126,7 @@ client:send(msg)
 client:onmessage(cb)
     Parameters:
         cb - func(val: string), a callback that executes for any message received on the client connection
+
+client:close()
+    Description: close the client WebSocket connection
 ```

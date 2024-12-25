@@ -102,7 +102,7 @@ func (s *State) newConsumer(_ *lua.LState) int {
 	case "last":
 		offset = kafka.LastOffset
 	default:
-		return s.CancelErr(fmt.Sprintf("error: new_consumer: unexpected offset '%s'", offsetParam))
+		return s.CancelErr("error: new_consumer: unexpected offset '%s'", offsetParam)
 	}
 	p, err := NewKafkaPrinter("sqump-consumer")
 	if err != nil {

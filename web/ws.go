@@ -115,28 +115,32 @@ func (r *Router) handleSocketConnection(eps stores.ExecProxyService) http.Handle
 					r.ServerError(w, err)
 					return
 				}
-				var cmd UnparsedCommand
-				err = json.Unmarshal(msg, &cmd)
-				if err != nil {
-					r.ServerError(w, err)
-					return
-				}
-				r.l.Debug("received message", "command", cmd)
-				switch cmd.Command {
-				case "view":
-					err = handleViewCommand(eps, req, conn, cmd.Payload)
+				go func() {
+					var cmd UnparsedCommand
+					err = json.Unmarshal(msg, &cmd)
 					if err != nil {
-						prnt.Println("error encountered in view command:", err)
+						r.ServerError(w, err)
+						return
 					}
-				case "exec":
-					err = handleExecCommand(eps, req, conn, cmd.Payload)
-					if err != nil {
-						prnt.Println("error encountered in exec command:", err)
+					r.l.Debug("received message", "command", cmd)
+					switch cmd.Command {
+					case "view":
+						err = handleViewCommand(eps, req, conn, cmd.Payload)
+						if err != nil {
+							prnt.Println("error encountered in view command:", err)
+						}
+					case "exec":
+						err = handleExecCommand(eps, req, conn, cmd.Payload)
+						if err != nil {
+							prnt.Println("error encountered in exec command:", err)
+						}
+					case "cancel":
+						handleCancelCommand(eps)
+					default:
+						r.ServerError(w, fmt.Errorf("unrecognized command: %s\n", cmd.Command))
+						return
 					}
-				default:
-					r.ServerError(w, fmt.Errorf("unrecognized command: %s\n", cmd.Command))
-					return
-				}
+				}()
 			}
 		}()
 	}
@@ -197,6 +201,10 @@ func handleExecCommand(
 		return err
 	}
 	return nil
+}
+
+func handleCancelCommand(eps stores.ExecProxyService) {
+	eps.CancelScripts()
 }
 
 func sendClearCommand(conn net.Conn) error {

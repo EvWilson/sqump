@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -49,6 +50,7 @@ func (s *State) registerWebsocketModule(L *lua.LState) {
 			L.SetField(clientMT, "__index", L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
 				"send":      s.sendMessage,
 				"onmessage": s.onMessage,
+				"close":     s.close,
 			}))
 		}
 
@@ -111,6 +113,10 @@ func (s *State) onMessage(_ *lua.LState) int {
 		for {
 			msg, err := wsutil.ReadServerText(client.conn)
 			if err != nil {
+				var errType *net.OpError
+				if errors.As(err, &errType) {
+					break
+				}
 				s.CancelErr("error: onmessage: %v", err)
 			}
 			s.LState.Push(cb)
@@ -121,5 +127,17 @@ func (s *State) onMessage(_ *lua.LState) int {
 		}
 	}()
 
+	return 0
+}
+
+func (s *State) close(_ *lua.LState) int {
+	client, err := getClientParam(s.LState, 1)
+	if err != nil {
+		return s.CancelErr("error: close: %v", err)
+	}
+	err = client.conn.Close()
+	if err != nil {
+		return s.CancelErr("error: close: %v", err)
+	}
 	return 0
 }
