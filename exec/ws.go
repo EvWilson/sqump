@@ -114,7 +114,7 @@ func (s *State) onMessage(_ *lua.LState) int {
 			msg, err := wsutil.ReadServerText(client.conn)
 			if err != nil {
 				var errType *net.OpError
-				if errors.As(err, &errType) {
+				if errors.As(err, &errType) || err.Error() == "EOF" {
 					break
 				}
 				s.CancelErr("error: onmessage: %v", err)
